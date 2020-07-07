@@ -3,6 +3,7 @@ import { isFontLoaded } from './FontUtils'
 import FontFace from './FontFace'
 import { drawGradient, drawText, drawImage } from './CanvasUtils'
 import Canvas from './Canvas'
+import DebugCanvasContext from './DebugCanvasContext'
 
 // Global backing store <canvas> cache
 let _backingStores = []
@@ -136,74 +137,97 @@ function handleFontLoad(fontFace) {
 function drawBaseRenderLayer(ctx, layer) {
   const { frame } = layer
 
-  // Border radius:
-  if (layer.borderRadius) {
-    ctx.beginPath()
-    ctx.moveTo(frame.x + layer.borderRadius, frame.y)
-    ctx.arcTo(
-      frame.x + frame.width,
-      frame.y,
-      frame.x + frame.width,
-      frame.y + frame.height,
-      layer.borderRadius
-    )
-    ctx.arcTo(
-      frame.x + frame.width,
-      frame.y + frame.height,
-      frame.x,
-      frame.y + frame.height,
-      layer.borderRadius
-    )
-    ctx.arcTo(
-      frame.x,
-      frame.y + frame.height,
-      frame.x,
-      frame.y,
-      layer.borderRadius
-    )
-    ctx.arcTo(
-      frame.x,
-      frame.y,
-      frame.x + frame.width,
-      frame.y,
-      layer.borderRadius
-    )
-    ctx.closePath()
+  if (ctx instanceof DebugCanvasContext) {
+    const nextElement = ctx.initNextElement();
 
-    // Create a clipping path when drawing an image or using border radius.
-    if (layer.type === 'image') {
-      ctx.clip()
+    if (layer.borderRadius) {
+      nextElement.style.borderRadius = `${layer.borderRadius}px`;
     }
 
-    // Border with border radius:
     if (layer.borderColor) {
+      nextElement.style.borderColor = layer.borderColor;
+    }
+
+    if (layer.backgroundColor) {
+      nextElement.style.backgroundColor = layer.backgroundColor;
+    }
+
+    nextElement.style.top = `${frame.y}px`;
+    nextElement.style.left = `${frame.x}px`;
+    nextElement.style.width = `${frame.width}px`;
+    nextElement.style.height = `${frame.height}px`;
+
+    ctx.insertElement();
+  } else {
+    // Border radius:
+    if (layer.borderRadius) {
+      ctx.beginPath()
+      ctx.moveTo(frame.x + layer.borderRadius, frame.y)
+      ctx.arcTo(
+        frame.x + frame.width,
+        frame.y,
+        frame.x + frame.width,
+        frame.y + frame.height,
+        layer.borderRadius
+      )
+      ctx.arcTo(
+        frame.x + frame.width,
+        frame.y + frame.height,
+        frame.x,
+        frame.y + frame.height,
+        layer.borderRadius
+      )
+      ctx.arcTo(
+        frame.x,
+        frame.y + frame.height,
+        frame.x,
+        frame.y,
+        layer.borderRadius
+      )
+      ctx.arcTo(
+        frame.x,
+        frame.y,
+        frame.x + frame.width,
+        frame.y,
+        layer.borderRadius
+      )
+      ctx.closePath()
+
+      // Create a clipping path when drawing an image or using border radius.
+      if (layer.type === 'image') {
+        ctx.clip()
+      }
+
+      // Border with border radius:
+      if (layer.borderColor) {
+        ctx.lineWidth = layer.borderWidth || 1
+        ctx.strokeStyle = layer.borderColor
+        ctx.stroke()
+      }
+    }
+
+    // Border color (no border radius):
+    if (layer.borderColor && !layer.borderRadius) {
       ctx.lineWidth = layer.borderWidth || 1
       ctx.strokeStyle = layer.borderColor
-      ctx.stroke()
+      ctx.strokeRect(frame.x, frame.y, frame.width, frame.height)
     }
-  }
 
-  // Border color (no border radius):
-  if (layer.borderColor && !layer.borderRadius) {
-    ctx.lineWidth = layer.borderWidth || 1
-    ctx.strokeStyle = layer.borderColor
-    ctx.strokeRect(frame.x, frame.y, frame.width, frame.height)
-  }
+    // Shadow:
+    ctx.shadowBlur = layer.shadowBlur
+    ctx.shadowColor = layer.shadowColor
+    ctx.shadowOffsetX = layer.shadowOffsetX
+    ctx.shadowOffsetY = layer.shadowOffsetY
 
-  // Shadow:
-  ctx.shadowBlur = layer.shadowBlur
-  ctx.shadowColor = layer.shadowColor
-  ctx.shadowOffsetX = layer.shadowOffsetX
-  ctx.shadowOffsetY = layer.shadowOffsetY
-
-  // Background color:
-  if (layer.backgroundColor) {
-    ctx.fillStyle = layer.backgroundColor
-    if (layer.borderRadius) {
-      // Fill the current path when there is a borderRadius set.
-      ctx.fill()
-    } else {
-      ctx.fillRect(frame.x, frame.y, frame.width, frame.height)
+    // Background color:
+    if (layer.backgroundColor) {
+      ctx.fillStyle = layer.backgroundColor
+      if (layer.borderRadius) {
+        // Fill the current path when there is a borderRadius set.
+        ctx.fill()
+      } else {
+        ctx.fillRect(frame.x, frame.y, frame.width, frame.height)
+      }
     }
   }
 }
@@ -387,7 +411,7 @@ drawRenderLayer = (ctx, layer) => {
 
   // If the layer is bitmap-cacheable, draw in a pooled off-screen canvas.
   // We disable backing stores on pad since we flip there.
-  if (layer.backingStoreId) {
+  if (layer.backingStoreId && !(ctx instanceof DebugCanvasContext)) {
     drawCacheableRenderLayer(ctx, layer, drawFunction)
   } else {
     ctx.save()

@@ -5,6 +5,7 @@ import { make } from './FrameUtils'
 import { drawRenderLayer } from './DrawingUtils'
 import hitTest from './hitTest'
 import layoutNode from './layoutNode'
+import DebugCanvasContext from './DebugCanvasContext'
 
 const MOUSE_CLICK_DURATION_MS = 300
 
@@ -24,6 +25,7 @@ class Surface extends React.Component {
     height: PropTypes.number.isRequired,
     scale: PropTypes.number,
     enableCSSLayout: PropTypes.bool,
+    enableDebug: PropTypes.bool,
     children: PropTypes.node.isRequired,
     // eslint-disable-next-line react/forbid-prop-types
     style: PropTypes.object,
@@ -36,6 +38,7 @@ class Surface extends React.Component {
     className: '',
     id: undefined,
     enableCSSLayout: false,
+    enableDebug: false,
     style: {},
     canvas: undefined
   }
@@ -99,12 +102,14 @@ class Surface extends React.Component {
   // =======
   getLayer = () => this.node
 
+  debugCanvasContext = new DebugCanvasContext(this);
+
   getContext = () => {
-    return this.canvas.getContext('2d')
+    return this.props.enableDebug ? this.debugCanvasContext : this.canvas.getContext('2d')
   }
 
   scale = () => {
-    this.getContext().scale(this.props.scale, this.props.scale)
+    this.getContext().scale(this.props.scale, this.props.scale);
   }
 
   batchedTick = () => {
@@ -275,7 +280,11 @@ class Surface extends React.Component {
       style.height = this.props.height
     }
 
-    return React.createElement('canvas', {
+    if (this.props.enableDebug && !style.position) {
+      style.position = 'relative';
+    }
+
+    return React.createElement(this.props.enableDebug ? 'div' : 'canvas', {
       ref: this.setCanvasRef,
       className: this.props.className,
       id: this.props.id,
