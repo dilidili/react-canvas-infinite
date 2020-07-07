@@ -138,7 +138,7 @@ function drawBaseRenderLayer(ctx, layer) {
   const { frame } = layer
 
   if (ctx instanceof DebugCanvasContext) {
-    const nextElement = ctx.initNextElement();
+    const nextElement = ctx.initNextElement(layer);
 
     if (layer.borderRadius) {
       nextElement.style.borderRadius = `${layer.borderRadius}px`;
@@ -152,12 +152,13 @@ function drawBaseRenderLayer(ctx, layer) {
       nextElement.style.backgroundColor = layer.backgroundColor;
     }
 
-    nextElement.style.top = `${frame.y}px`;
-    nextElement.style.left = `${frame.x}px`;
+    const parentTop = layer.parentLayer ? layer.parentLayer.frame.y : 0;
+    const parentLeft = layer.parentLayer ? layer.parentLayer.frame.x : 0;
+
+    nextElement.style.top = `${frame.y - parentTop}px`;
+    nextElement.style.left = `${frame.x - parentLeft}px`;
     nextElement.style.width = `${frame.width}px`;
     nextElement.style.height = `${frame.height}px`;
-
-    ctx.insertElement();
   } else {
     // Border radius:
     if (layer.borderRadius) {
@@ -382,6 +383,7 @@ function drawChildren(layer, ctx) {
  */
 drawRenderLayer = (ctx, layer) => {
   const drawFunction = getDrawFunction(layer.type)
+  const isDebug = ctx instanceof DebugCanvasContext;
 
   // Performance: avoid drawing hidden layers.
   if (typeof layer.alpha === 'number' && layer.alpha <= 0) {
@@ -411,19 +413,33 @@ drawRenderLayer = (ctx, layer) => {
 
   // If the layer is bitmap-cacheable, draw in a pooled off-screen canvas.
   // We disable backing stores on pad since we flip there.
-  if (layer.backingStoreId && !(ctx instanceof DebugCanvasContext)) {
+  if (layer.backingStoreId && !isDebug) {
     drawCacheableRenderLayer(ctx, layer, drawFunction)
   } else {
-    ctx.save()
+    if (isDebug) {
+      if (!ctx._parentElement) {
+        ctx._parentElement = ctx.instance.canvas;
+      }
+    }
 
+    ctx.save()
     // Draw
     // eslint-disable-next-line no-unused-expressions
     drawFunction && drawFunction(ctx, layer)
     ctx.restore()
 
+    let lastParentElement = ctx._parentElement;
+    if (isDebug) {
+      ctx._parentElement = ctx._lastElement;
+    }
+
     // Draw child layers, sorted by their z-index.
     if (layer.children) {
       drawChildren(layer, ctx)
+    }
+
+    if (isDebug) {
+      ctx._parentElement = lastParentElement;
     }
   }
 

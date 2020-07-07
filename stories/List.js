@@ -4,7 +4,7 @@ import datas from './data';
 import { Group, Image, Text, Surface } from '../src/index'
 
 storiesOf('List', module).add('infinite scroll', () => {
-  const props = { size: { width: 400, height: 400 } }
+  const props = { size: { width: 200, height: 200 } }
 
   return (
     <div>
@@ -18,13 +18,13 @@ storiesOf('List', module).add('infinite scroll', () => {
       >
         {datas.map((data) => {
           return (
-            <Group style={{ flexDirection: 'row', marginBottom: 20, height: 20, width: 20, backgroundColor: 'red' }}>
-              {/* <Image src={data.imageUrl} style={{ marginRight: 10, width: 40, height: 40 }}></Image>
+            <Group style={{ flexDirection: 'row', marginBottom: 20, }}>
+              <Image src={data.imageUrl} style={{ marginRight: 10, width: 40, height: 40, borderRadius: 20 }}></Image>
 
-              <Group style={{ backgroundColor: 'red', width: 100, height: 20 }}>
+              <Group>
                 <Text style={{ color: 'black', fontSize: '12px', width: 100 }}>{data.title}</Text>
                 <Text>{data.excerpt}</Text>
-              </Group> */}
+              </Group>
             </Group>
           );
         })}

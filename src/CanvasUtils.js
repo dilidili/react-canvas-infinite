@@ -1,5 +1,6 @@
 import clamp from './clamp'
 import measureText from './measureText'
+import DebugCanvasContext from './DebugCanvasContext'
 
 /**
  * Draw an image into a <canvas>. This operation requires that the image
@@ -19,13 +20,6 @@ import measureText from './measureText'
  */
 function drawImage(ctx, image, x, y, width, height, options) {
   options = options || {}
-
-  if (options.backgroundColor) {
-    ctx.save()
-    ctx.fillStyle = options.backgroundColor
-    ctx.fillRect(x, y, width, height)
-    ctx.restore()
-  }
 
   let dx = 0
   let dy = 0
@@ -88,7 +82,31 @@ function drawImage(ctx, image, x, y, width, height, options) {
   dx = Math.round(x)
   dy = Math.round(y)
 
-  ctx.drawImage(image.getRawImage(), sx, sy, sw, sh, dx, dy, dw, dh)
+  if (ctx instanceof DebugCanvasContext) {
+    const element = ctx._lastElement;
+    const layer = ctx._lastLayer;
+
+    const img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = image._originalSrc;
+    img.style.position = 'absolute';
+    img.style.width = `${dw}px`;
+    img.style.height = `${dh}px`;
+    img.style.left = `${dx - layer.frame.x}px`;
+    img.style.top = `${dy - layer.frame.y}px`;
+    img.style.clip = `${sy}px ${sx + sw}px ${sy + sh}px ${sx}px`;
+
+    element.appendChild(img);
+  } else {
+    if (options.backgroundColor) {
+      ctx.save()
+      ctx.fillStyle = options.backgroundColor
+      ctx.fillRect(x, y, width, height)
+      ctx.restore()
+    }
+
+    ctx.drawImage(image.getRawImage(), sx, sy, sw, sh, dx, dy, dw, dh)
+  }
 }
 
 /**
