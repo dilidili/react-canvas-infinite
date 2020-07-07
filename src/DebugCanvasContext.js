@@ -19,10 +19,6 @@ class DebugCanvasContext {
   translateX = 0;
   translateY = 0;
 
-  _parentElement = null;
-  _lastElement = null;
-  _lastLayer = null;
-
   scale = (scaleX, scaleY) => {
     this.scaleX = scaleX;
     this.scaleY = scaleY;
@@ -36,9 +32,6 @@ class DebugCanvasContext {
   clearRect = () => {
     // debug mode only supports clear all children nodes.
     this.instance.canvas.innerHTML = '';
-    this._parentElement = null;
-    this._lastElement = null;
-    this._lastLayer = null;
   }
 
   save = () => {
@@ -60,13 +53,6 @@ class DebugCanvasContext {
     const element = document.createElement('div');
     element.style.position = 'absolute';
     element.style.overflow = 'hidden';
-
-    if (this._parentElement) {
-      this._parentElement.appendChild(element);
-    }
-
-    this._lastElement = element;
-    this._lastLayer = layer;
 
     return element;
   }

@@ -28,6 +28,7 @@ const LAYER_TYPE = 'text'
 class Text extends CanvasComponent {
   applyLayerProps = (prevProps, props) => {
     const style = props && props.style ? props.style : {}
+
     const layer = this.node
 
     if (layer.type !== LAYER_TYPE) {

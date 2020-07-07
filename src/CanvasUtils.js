@@ -18,7 +18,8 @@ import DebugCanvasContext from './DebugCanvasContext'
  *   {Object} focusPoint {x,y}
  *   {String} backgroundColor
  */
-function drawImage(ctx, image, x, y, width, height, options) {
+function drawImage(ctx, image, layer, options) {
+  const { x, y, width, height } = layer.frame;
   options = options || {}
 
   let dx = 0
@@ -83,8 +84,6 @@ function drawImage(ctx, image, x, y, width, height, options) {
   dy = Math.round(y)
 
   if (ctx instanceof DebugCanvasContext) {
-    const element = ctx._lastElement;
-    const layer = ctx._lastLayer;
 
     const img = new Image();
     img.crossOrigin = "Anonymous";
@@ -96,6 +95,7 @@ function drawImage(ctx, image, x, y, width, height, options) {
     img.style.top = `${dy - layer.frame.y}px`;
     img.style.clip = `${sy}px ${sx + sw}px ${sy + sh}px ${sx}px`;
 
+    const element = layer.containerInfo;
     element.appendChild(img);
   } else {
     if (options.backgroundColor) {

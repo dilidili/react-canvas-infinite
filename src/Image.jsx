@@ -134,8 +134,6 @@ export default class Image extends React.Component {
 
     return (
       <Group ref={this.setGroupRef} style={style}>
-        <Group style={backgroundStyle} />
-
         <RawImageName
           ref={this.setRawImageRef}
           src={this.props.src}

@@ -147,7 +147,12 @@ class Surface extends React.Component {
       if (this.props.enableCSSLayout) {
         layoutNode(this.node)
       }
+
       drawRenderLayer(this.getContext(), this.node)
+
+      if (this.props.enableDebug) {
+        this.canvas.appendChild(this.node.containerInfo);
+      }
     }
   }
 

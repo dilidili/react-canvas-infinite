@@ -159,6 +159,11 @@ function drawBaseRenderLayer(ctx, layer) {
     nextElement.style.left = `${frame.x - parentLeft}px`;
     nextElement.style.width = `${frame.width}px`;
     nextElement.style.height = `${frame.height}px`;
+
+    layer.containerInfo = nextElement;
+    if (layer.parentLayer && layer.parentLayer.containerInfo) {
+      layer.parentLayer.containerInfo.appendChild(nextElement);
+    }
   } else {
     // Border radius:
     if (layer.borderRadius) {
@@ -252,10 +257,7 @@ function drawImageRenderLayer(ctx, layer) {
   drawImage(
     ctx,
     image,
-    layer.frame.x,
-    layer.frame.y,
-    layer.frame.width,
-    layer.frame.height
+    layer,
   )
 }
 
@@ -416,30 +418,15 @@ drawRenderLayer = (ctx, layer) => {
   if (layer.backingStoreId && !isDebug) {
     drawCacheableRenderLayer(ctx, layer, drawFunction)
   } else {
-    if (isDebug) {
-      if (!ctx._parentElement) {
-        ctx._parentElement = ctx.instance.canvas;
-      }
-    }
-
     ctx.save()
     // Draw
     // eslint-disable-next-line no-unused-expressions
     drawFunction && drawFunction(ctx, layer)
     ctx.restore()
 
-    let lastParentElement = ctx._parentElement;
-    if (isDebug) {
-      ctx._parentElement = ctx._lastElement;
-    }
-
     // Draw child layers, sorted by their z-index.
     if (layer.children) {
       drawChildren(layer, ctx)
-    }
-
-    if (isDebug) {
-      ctx._parentElement = lastParentElement;
     }
   }
 
