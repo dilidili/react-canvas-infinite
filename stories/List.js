@@ -1,7 +1,7 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 import datas from './data';
-import { Group, Image, Text, Surface } from '../src/index'
+import { Group, Image, Text, Surface, FontFace } from '../src/index'
 
 storiesOf('List', module).add('infinite scroll', () => {
   const props = { size: { width: 400, height: 400 } }
@@ -17,18 +17,20 @@ storiesOf('List', module).add('infinite scroll', () => {
         enableDebug={true}
         enableDebug={false}
       >
-        {datas.map((data, index) => {
-          return (
-            <Group style={{ flexDirection: 'row', marginBottom: 20 }}>
-              <Image src={data.imageUrl} style={{ marginRight: 10, width: 40, height: 40, borderRadius: 20 }}></Image>
+        <Group style={{ fontFace: FontFace('Georgia') }}>
+          {datas.map((data, index) => {
+            return (
+              <Group style={{ flexDirection: 'row', marginBottom: 20 }} key={index}>
+                <Image src={data.imageUrl} style={{ marginRight: 10, width: 40, height: 40, borderRadius: 20 }}></Image>
 
-              <Group>
-                <Text style={{ color: 'black', fontSize: '12px', width: 100 }}>{data.title}</Text>
-                {/* <Text>{data.excerpt}</Text> */}
+                <Group style={{ height: 40, justifyContent: 'space-between' }}>
+                  <Text>{data.title}</Text>
+                  <Text>{data.excerpt}</Text>
+                </Group>
               </Group>
-            </Group>
-          );
-        })}
+            );
+          })}
+        </Group>
       </Surface>
     </div>
   )

@@ -124,7 +124,7 @@ function drawImage(ctx, image, layer, options) {
  *   {String} color
  *   {String} backgroundColor
  */
-function drawText(ctx, text, x, y, width, height, fontFace, _options) {
+function drawText(ctx, text, x, y, width, height, fontFace, _options, layer) {
   let currX = x
   let currY = y
   let currText
@@ -135,6 +135,17 @@ function drawText(ctx, text, x, y, width, height, fontFace, _options) {
   options.textAlign = options.textAlign || 'left'
   options.backgroundColor = options.backgroundColor || 'transparent'
   options.color = options.color || '#000'
+
+  if (ctx instanceof DebugCanvasContext) {
+    layer.containerInfo.innerText = layer.text;
+    layer.containerInfo.style.fontFamily = fontFace.family;
+    layer.containerInfo.style.lineHeight = `${options.lineHeight}px`;
+    layer.containerInfo.style.backgroundColor = options.backgroundColor;
+    layer.containerInfo.style.color = options.color;
+    layer.containerInfo.style.fontSize = `${options.fontSize}px`;
+
+    return;
+  }
 
   const textMetrics = measureText(
     text,
@@ -152,6 +163,7 @@ function drawText(ctx, text, x, y, width, height, fontFace, _options) {
     ctx.fillRect(0, 0, width, height)
   }
 
+  ctx.textBaseline = 'middle';
   ctx.fillStyle = options.color
   ctx.font = `${fontFace.attributes.style} normal ${
     fontFace.attributes.weight
@@ -159,10 +171,7 @@ function drawText(ctx, text, x, y, width, height, fontFace, _options) {
 
   textMetrics.lines.forEach((line, index) => {
     currText = line.text
-    currY =
-      index === 0
-        ? y + options.fontSize
-        : y + options.fontSize + options.lineHeight * index
+    currY = y + options.lineHeight * index + options.lineHeight / 2;
 
     // Account for text-align: left|right|center
     switch (options.textAlign) {
@@ -178,7 +187,7 @@ function drawText(ctx, text, x, y, width, height, fontFace, _options) {
 
     if (
       index < textMetrics.lines.length - 1 &&
-      options.fontSize + options.lineHeight * (index + 1) > height
+      options.lineHeight + options.lineHeight * (index + 1) > height
     ) {
       currText = currText.replace(/,?\s?\w+$/, '…')
     }

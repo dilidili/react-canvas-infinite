@@ -287,8 +287,9 @@ function drawTextRenderLayer(ctx, layer) {
       fontSize: layer.fontSize,
       lineHeight: layer.lineHeight,
       textAlign: layer.textAlign,
-      color: layer.color
-    }
+      color: layer.color,
+    },
+    layer,
   )
 }
 

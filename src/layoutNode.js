@@ -1,5 +1,9 @@
-import computeLayout from 'css-layout'
-import { emptyObject } from './utils'
+import computeLayout from 'css-layout';
+import { emptyObject } from './utils';
+import FontFace from './FontFace';
+
+const canvas = document.createElement('canvas');
+const ctx = canvas.getContext('2d');
 
 function createNode(layer) {
   return {
@@ -28,6 +32,29 @@ function walkNode(node, parentLeft, parentTop) {
   }
 }
 
+function preWalkNode(node) {
+  const layer = node.layer;
+
+  if (layer.type === 'text') {
+    const fontFace = layer.fontFace || FontFace.Default();
+    const fontSize = layer.fontSize || 16;
+    const lineHeight = layer.lineHeight || 18;
+
+    ctx.font = `${fontFace.attributes.style} normal ${
+      fontFace.attributes.weight
+    } ${fontSize}px ${fontFace.family}`;
+
+    const { width } = ctx.measureText(layer.text);
+    node.style = { ...node.style, width: width, height: lineHeight, };
+  }
+
+  if (node.children && node.children.length > 0) {
+    node.children.forEach(child => {
+      preWalkNode(child);
+    })
+  }
+}
+
 /**
  * This computes the CSS layout for a RenderLayer tree and mutates the frame
  * objects at each node.
@@ -37,6 +64,7 @@ function walkNode(node, parentLeft, parentTop) {
  */
 function layoutNode(root) {
   const rootNode = createNode(root)
+  preWalkNode(rootNode);
   computeLayout(rootNode)
   walkNode(rootNode)
   return rootNode
