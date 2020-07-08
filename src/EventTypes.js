@@ -12,6 +12,7 @@ const onMouseOut = 'mouseout'
 const onClick = 'click'
 const onContextMenu = 'contextmenu'
 const onDoubleClick = 'dblclick'
+const onWheel = 'wheel';
 
 export {
   onTouchStart,
@@ -25,5 +26,6 @@ export {
   onMouseOut,
   onClick,
   onContextMenu,
-  onDoubleClick
+  onDoubleClick,
+  onWheel,
 }

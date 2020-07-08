@@ -1,6 +1,7 @@
 import Surface from './Surface'
 import { Group, Text, Layer, Gradient } from './Core'
 import Image from './Image'
+import List from './List.jsx'
 import FontFace from './FontFace'
 import measureText from './measureText'
 import CanvasComponent from './CanvasComponent'
@@ -34,6 +35,7 @@ const registerCustomComponent = (name, applyProps, drawFunction) => {
 export {
   Group,
   Text,
+  List,
   Layer,
   Gradient,
   Surface,

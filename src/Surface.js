@@ -166,6 +166,14 @@ class Surface extends React.Component {
     }
   }
 
+  handleScroll = e => {
+    const hitTarget = hitTest(e, this.node, this.canvas);
+
+    if (hitTarget) {
+      hitTarget[hitTest.getHitHandle(e.type)](e);
+    }
+  }
+
   handleTouchStart = e => {
     const hitTarget = hitTest(e, this.node, this.canvas)
 
@@ -307,7 +315,8 @@ class Surface extends React.Component {
       onMouseOut: this.handleMouseEvent,
       onContextMenu: this.handleContextMenu,
       onClick: this.handleMouseEvent,
-      onDoubleClick: this.handleMouseEvent
+      onDoubleClick: this.handleMouseEvent,
+      onWheel: this.handleScroll,
     })
   }
 }

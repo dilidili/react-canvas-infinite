@@ -1,7 +1,7 @@
 import React from 'react'
 import { storiesOf } from '@storybook/react'
 import datas from './data';
-import { Group, Image, Text, Surface, FontFace } from '../src/index'
+import { Group, Image, Text, Surface, FontFace, List } from '../src/index'
 
 storiesOf('List', module).add('infinite scroll', () => {
   const props = { size: { width: 400, height: 400 } }
@@ -17,7 +17,7 @@ storiesOf('List', module).add('infinite scroll', () => {
         enableDebug={true}
         enableDebug={false}
       >
-        <Group style={{ fontFace: FontFace('Georgia') }}>
+        <List style={{ fontFace: FontFace('Georgia'), height: 300 }}>
           {datas.map((data, index) => {
             return (
               <Group style={{ flexDirection: 'row', marginBottom: 20 }} key={index}>
@@ -30,7 +30,7 @@ storiesOf('List', module).add('infinite scroll', () => {
               </Group>
             );
           })}
-        </Group>
+        </List>
       </Surface>
     </div>
   )

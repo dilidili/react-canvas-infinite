@@ -2,6 +2,7 @@ import RenderLayer from './RenderLayer'
 import { make } from './FrameUtils'
 import * as EventTypes from './EventTypes'
 import { emptyObject } from './utils'
+import clamp from './clamp';
 
 let LAYER_GUID = 1
 
@@ -13,6 +14,7 @@ export default class CanvasComponent {
     this.node = new RenderLayer(this)
     this._layerId = LAYER_GUID
     LAYER_GUID += 1
+    this.scrollY = 0;
   }
 
   putEventListener = (type, listener) => {
@@ -131,6 +133,10 @@ export default class CanvasComponent {
       }
     }
 
+    if (prevProps.scrollY !== props.scrollY) {
+      this.putEventListener(EventTypes['onWheel'], this.scroll);
+    }
+
     this.setStyleFromProps(layer, props)
   }
 
@@ -145,5 +151,12 @@ export default class CanvasComponent {
     this.destroyEventListeners()
     this._originalStyle = null
     this.node.reset(this)
+  }
+
+  scroll = (evt) => {
+    this.scrollY -= evt.deltaY;
+    // this.scrollY = clamp(this.scrollY, 0 );
+    this.node.translateY = this.scrollY;
+    this.node.invalidateLayout();
   }
 }
