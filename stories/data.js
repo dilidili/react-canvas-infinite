@@ -1,4 +1,4 @@
-module.exports = [
+let data = [
   {
     title: '10 Unbelievable Secrets That Will Make Your Airline Pilot Nervous',
     excerpt:
@@ -39,3 +39,11 @@ module.exports = [
     imageUrl: 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png'
   },
 ]
+
+data = data.concat(data);
+data = data.concat(data);
+data = data.concat(data);
+data = data.concat(data);
+data = data.concat(data);
+
+export default data;

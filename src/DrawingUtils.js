@@ -416,7 +416,7 @@ drawRenderLayer = (ctx, layer) => {
 
   // If the layer is bitmap-cacheable, draw in a pooled off-screen canvas.
   // We disable backing stores on pad since we flip there.
-  if (layer.backingStoreId && !isDebug) {
+  if ((layer.backingStoreId || layer.scrollable) && !isDebug) {
     drawCacheableRenderLayer(ctx, layer, drawFunction)
   } else {
     ctx.save()
@@ -451,10 +451,11 @@ drawCacheableRenderLayer = (ctx, layer, drawFunction) => {
   // See if there is a pre-drawn canvas in the pool.
   let backingStore = getBackingStore(layer.backingStoreId)
   const backingStoreScale = layer.scale || window.devicePixelRatio
-  const frameOffsetY = layer.frame.y
-  const frameOffsetX = layer.frame.x
+  const frameOffsetY = layer.frame.y - (layer.scrollY || 0);
+  const frameOffsetX = layer.frame.x;
   let backingContext
 
+  const shouldRedraw = !backingStore || layer.scrollable;
   if (!backingStore) {
     if (_backingStores.length >= Canvas.poolSize) {
       // Re-use the oldest backing store once we reach the pooling limit.
@@ -483,10 +484,13 @@ drawCacheableRenderLayer = (ctx, layer, drawFunction) => {
         canvas: backingStore
       })
     }
+  }
 
+  if (shouldRedraw) {
     // Draw into the backing <canvas> at (0, 0) - we will later use the
     // <canvas> to draw the layer as an image at the proper coordinates.
     backingContext = backingStore.getContext('2d')
+    backingContext.clearRect(0, 0, layer.frame.width, layer.frame.height);
     layer.translate(-frameOffsetX, -frameOffsetY)
 
     // Draw default properties, such as background color.

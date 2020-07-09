@@ -17,7 +17,7 @@ storiesOf('List', module).add('infinite scroll', () => {
         enableDebug={true}
         enableDebug={false}
       >
-        <List style={{ fontFace: FontFace('Georgia'), height: 300 }}>
+        <List style={{ fontFace: FontFace('sans-serif'), height: 300 }}>
           {datas.map((data, index) => {
             return (
               <Group style={{ flexDirection: 'row', marginBottom: 20 }} key={index}>

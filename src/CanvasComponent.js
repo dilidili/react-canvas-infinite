@@ -120,9 +120,9 @@ export default class CanvasComponent {
     const layer = this.node
 
     // Generate backing store ID as needed.
-    if (props.useBackingStore && layer.backingStoreId !== this._layerId) {
+    if ((props.useBackingStore || props.scrollable) && layer.backingStoreId !== this._layerId) {
       layer.backingStoreId = this._layerId
-    } else if (!props.useBackingStore && layer.backingStoreId) {
+    } else if (!(props.useBackingStore || props.scrollable) && layer.backingStoreId) {
       layer.backingStoreId = null
     }
 
@@ -135,6 +135,8 @@ export default class CanvasComponent {
 
     if (prevProps.scrollY !== props.scrollY) {
       this.putEventListener(EventTypes['onWheel'], this.scroll);
+
+      layer.scrollable = !!props.scrollY;
     }
 
     this.setStyleFromProps(layer, props)
@@ -154,9 +156,16 @@ export default class CanvasComponent {
   }
 
   scroll = (evt) => {
+    const layer = this.node;
+    let minSrollY = 0;
+    if (layer.children && layer.children.length > 0) {
+      const lastFrame = layer.children[layer.children.length - 1].frame;
+      minSrollY = -Math.max((lastFrame.y + lastFrame.height) - layer.frame.height, 0);
+    }
+
     this.scrollY -= evt.deltaY;
-    // this.scrollY = clamp(this.scrollY, 0 );
-    this.node.translateY = this.scrollY;
+    this.scrollY = clamp(this.scrollY, minSrollY, 0);
+    layer.scrollY = this.scrollY;
     this.node.invalidateLayout();
   }
 }
