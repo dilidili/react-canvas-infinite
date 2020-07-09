@@ -7,7 +7,11 @@ const List = (props) => {
 
   return (
     <Group style={{ ...style, }} scrollY>
-      {children}
+      {React.Children.map(children, (child) => {
+        return React.cloneElement(child, {
+          useBackingStore: true,
+        });
+      })}
     </Group>
   )
 }

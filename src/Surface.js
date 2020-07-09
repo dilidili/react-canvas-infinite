@@ -112,20 +112,20 @@ class Surface extends React.Component {
     this.getContext().scale(this.props.scale, this.props.scale);
   }
 
-  batchedTick = () => {
+  batchedTick = (...args) => {
     if (this._frameReady === false) {
       this._pendingTick = true
       return
     }
-    this.tick()
+    this.tick.apply(this, args);
   }
 
-  tick = () => {
+  tick = (...args) => {
     // Block updates until next animation frame.
-    this._frameReady = false
-    this.clear()
-    this.draw()
-    requestAnimationFrame(this.afterTick)
+    this._frameReady = false;
+    this.clear();
+    this.draw.apply(this, args);
+    requestAnimationFrame(this.afterTick);
   }
 
   afterTick = () => {
@@ -142,9 +142,11 @@ class Surface extends React.Component {
     this.getContext().clearRect(0, 0, this.props.width, this.props.height)
   }
 
-  draw = () => {
+  draw = (recomputeLayout = true) => {
+    const startTime = performance.now();
+
     if (this.node) {
-      if (this.props.enableCSSLayout) {
+      if (this.props.enableCSSLayout && recomputeLayout) {
         layoutNode(this.node)
       }
 
@@ -154,6 +156,9 @@ class Surface extends React.Component {
         this.canvas.appendChild(this.node.containerInfo);
       }
     }
+
+    const endTime = performance.now();
+    console.log('fps:' + ~~(1000 / (endTime - startTime)));
   }
 
   // Events

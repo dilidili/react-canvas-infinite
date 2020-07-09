@@ -219,9 +219,9 @@ RenderLayer.prototype = {
    * @param {?Frame} frame Optional, if not passed the entire layer's frame
    *   will be invalidated.
    */
-  invalidateLayout() {
+  invalidateLayout(recomputeLayout = true) {
     // Bubble all the way to the root layer.
-    this.getRootLayer().draw()
+    this.getRootLayer().draw(recomputeLayout)
   },
 
   /**

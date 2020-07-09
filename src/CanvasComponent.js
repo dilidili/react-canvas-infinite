@@ -166,6 +166,6 @@ export default class CanvasComponent {
     this.scrollY -= evt.deltaY;
     this.scrollY = clamp(this.scrollY, minSrollY, 0);
     layer.scrollY = this.scrollY;
-    this.node.invalidateLayout();
+    this.node.invalidateLayout(false);
   }
 }
