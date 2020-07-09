@@ -30,6 +30,6 @@ Object.assign(Canvas.prototype, {
 
 // Be fairly conserative - we are potentially drawing a large number of medium
 // to large size images.
-Canvas.poolSize = 30
+Canvas.poolSize = 300
 
 export default Canvas

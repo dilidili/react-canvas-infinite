@@ -4,6 +4,8 @@ import * as EventTypes from './EventTypes'
 
 function RenderLayer(component) {
   this.reset(component)
+
+  this.scrollY = 0;
 }
 
 RenderLayer.prototype = {

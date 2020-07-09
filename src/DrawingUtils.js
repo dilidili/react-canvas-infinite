@@ -371,10 +371,39 @@ function drawChildren(layer, ctx) {
       drawRenderLayer(ctx, c0)
     }
   } else {
-    children
-      .slice()
-      .sort(sortByZIndexAscending)
-      .forEach(childLayer => drawRenderLayer(ctx, childLayer))
+    if (layer.scrollable) {
+      const scrollTop = -layer.scrollY;
+      const headBuffer = scrollTop - layer.frame.height;
+      const tailBuffer = scrollTop + 2 * layer.frame.height;
+
+      let startIndex, endIndex;
+      for (let i = 0; i < layer.children.length; i++) {
+        const element = layer.children[i];
+        if (element.frame.y > headBuffer && startIndex === undefined) {
+          startIndex = i;
+        }
+        if (element.frame.y > tailBuffer) {
+          endIndex = i;
+          break;
+        }
+      }
+
+      if (endIndex === undefined) {
+        endIndex = layer.children.length - 1;
+      }
+
+      const sliceChildren = children.slice(startIndex, endIndex + 1);
+      layer.bufferOffset = children[startIndex].frame.y;
+      sliceChildren
+        .slice()
+        .forEach(childLayer => drawRenderLayer(ctx, childLayer));
+
+    } else {
+      children
+        .slice()
+        .sort(sortByZIndexAscending)
+        .forEach(childLayer => drawRenderLayer(ctx, childLayer))
+    }
   }
 }
 
@@ -451,7 +480,7 @@ drawCacheableRenderLayer = (ctx, layer, drawFunction) => {
   // See if there is a pre-drawn canvas in the pool.
   let backingStore = getBackingStore(layer.backingStoreId)
   const backingStoreScale = layer.scale || window.devicePixelRatio
-  const frameOffsetY = layer.frame.y - (layer.scrollY || 0);
+  const frameOffsetY = layer.frame.y - (layer.scrollY || 0) + (layer.bufferOffset || 0);
   const frameOffsetX = layer.frame.x;
   let backingContext
 
