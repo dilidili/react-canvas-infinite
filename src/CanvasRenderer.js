@@ -5,7 +5,7 @@ import {
   unstable_now as now,
   unstable_shouldYield as shouldYield,
   unstable_scheduleCallback as scheduleDeferredCallback,
-  unstable_cancelCallback as cancelDeferredCallback
+  unstable_cancelCallback as cancelDeferredCallback,
 } from 'scheduler'
 import { emptyObject } from './utils'
 import Gradient from './Gradient'
@@ -126,6 +126,8 @@ const CanvasHostConfig = {
   getChildHostContext() {
     return emptyObject
   },
+
+  schedulePassiveEffects: scheduleDeferredCallback,
 
   scheduleDeferredCallback,
 

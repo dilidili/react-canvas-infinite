@@ -112,19 +112,20 @@ class Surface extends React.Component {
     this.getContext().scale(this.props.scale, this.props.scale);
   }
 
-  batchedTick = (...args) => {
+  batchedTick = (recomputeLayout) => {
     if (this._frameReady === false) {
-      this._pendingTick = true
+      this._pendingTick = true;
+      this._nextTickRecomputeLayout = recomputeLayout;
       return
     }
-    this.tick.apply(this, args);
+    this.tick(recomputeLayout);
   }
 
-  tick = (...args) => {
+  tick = (recomputeLayout) => {
     // Block updates until next animation frame.
     this._frameReady = false;
     this.clear();
-    this.draw.apply(this, args);
+    this.draw(recomputeLayout);
     requestAnimationFrame(this.afterTick);
   }
 
@@ -133,8 +134,9 @@ class Surface extends React.Component {
     this._frameReady = true
     // canvas might be already removed from DOM
     if (this._pendingTick && this.canvas) {
-      this._pendingTick = false
-      this.batchedTick()
+      this._pendingTick = false;
+      this.batchedTick(this._nextTickRecomputeLayout);
+      this._nextTickRecomputeLayout = true;
     }
   }
 
@@ -143,22 +145,17 @@ class Surface extends React.Component {
   }
 
   draw = (recomputeLayout = true) => {
-    const startTime = performance.now();
-
     if (this.node) {
       if (this.props.enableCSSLayout && recomputeLayout) {
-        layoutNode(this.node)
+        layoutNode(this.node);
       }
 
-      drawRenderLayer(this.getContext(), this.node)
+      drawRenderLayer(this.getContext(), this.node);
 
       if (this.props.enableDebug) {
         this.canvas.appendChild(this.node.containerInfo);
       }
     }
-
-    const endTime = performance.now();
-    console.log('fps:' + ~~(1000 / (endTime - startTime)));
   }
 
   // Events

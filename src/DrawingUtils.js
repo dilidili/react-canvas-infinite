@@ -352,7 +352,7 @@ let drawCacheableRenderLayer = null
 // eslint-disable-next-line import/no-mutable-exports
 let drawRenderLayer = null
 
-function drawChildren(layer, ctx) {
+function drawChildren(layer, ctx, start, end) {
   const { children } = layer
   if (children.length === 0) return
 
@@ -371,33 +371,11 @@ function drawChildren(layer, ctx) {
       drawRenderLayer(ctx, c0)
     }
   } else {
-    if (layer.scrollable) {
-      const scrollTop = -layer.scrollY;
-      const headBuffer = scrollTop - layer.frame.height;
-      const tailBuffer = scrollTop + 2 * layer.frame.height;
-
-      let startIndex, endIndex;
-      for (let i = 0; i < layer.children.length; i++) {
-        const element = layer.children[i];
-        if (element.frame.y > headBuffer && startIndex === undefined) {
-          startIndex = i;
-        }
-        if (element.frame.y > tailBuffer) {
-          endIndex = i;
-          break;
-        }
-      }
-
-      if (endIndex === undefined) {
-        endIndex = layer.children.length - 1;
-      }
-
-      const sliceChildren = children.slice(startIndex, endIndex + 1);
-      layer.bufferOffset = children[startIndex].frame.y;
+    if (start !== undefined && end !== undefined) {
+      const sliceChildren = children.slice(start, end + 1);
       sliceChildren
         .slice()
         .forEach(childLayer => drawRenderLayer(ctx, childLayer));
-
     } else {
       children
         .slice()
@@ -445,7 +423,7 @@ drawRenderLayer = (ctx, layer) => {
 
   // If the layer is bitmap-cacheable, draw in a pooled off-screen canvas.
   // We disable backing stores on pad since we flip there.
-  if ((layer.backingStoreId || layer.scrollable) && !isDebug) {
+  if (layer.backingStoreId && !isDebug) {
     drawCacheableRenderLayer(ctx, layer, drawFunction)
   } else {
     ctx.save()
@@ -480,11 +458,11 @@ drawCacheableRenderLayer = (ctx, layer, drawFunction) => {
   // See if there is a pre-drawn canvas in the pool.
   let backingStore = getBackingStore(layer.backingStoreId)
   const backingStoreScale = layer.scale || window.devicePixelRatio
-  const frameOffsetY = layer.frame.y - (layer.scrollY || 0) + (layer.bufferOffset || 0);
+  const frameOffsetY = layer.frame.y + (layer.bufferOffset || 0);
   const frameOffsetX = layer.frame.x;
   let backingContext
 
-  const shouldRedraw = !backingStore || layer.scrollable;
+  const shouldRedraw = !backingStore;
   if (!backingStore) {
     if (_backingStores.length >= Canvas.poolSize) {
       // Re-use the oldest backing store once we reach the pooling limit.
@@ -520,7 +498,10 @@ drawCacheableRenderLayer = (ctx, layer, drawFunction) => {
     // <canvas> to draw the layer as an image at the proper coordinates.
     backingContext = backingStore.getContext('2d')
     backingContext.clearRect(0, 0, layer.frame.width, layer.frame.height);
-    layer.translate(-frameOffsetX, -frameOffsetY)
+
+    let startIndex, endIndex;
+
+    layer.translate(-frameOffsetX, -frameOffsetY, startIndex, endIndex);
 
     // Draw default properties, such as background color.
     backingContext.save()
@@ -532,11 +513,11 @@ drawCacheableRenderLayer = (ctx, layer, drawFunction) => {
 
     // Draw child layers, sorted by their z-index.
     if (layer.children) {
-      drawChildren(layer, backingContext)
+      drawChildren(layer, backingContext, startIndex, endIndex);
     }
 
     // Restore layer's original frame.
-    layer.translate(frameOffsetX, frameOffsetY)
+    layer.translate(frameOffsetX, frameOffsetY, startIndex, endIndex);
   }
 
   // We have the pre-rendered canvas ready, draw it into the destination canvas.

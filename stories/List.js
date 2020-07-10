@@ -17,10 +17,14 @@ storiesOf('List', module).add('infinite scroll', () => {
         enableDebug={true}
         enableDebug={false}
       >
-        <List style={{ fontFace: FontFace('sans-serif'), height: 300 }}>
-          {datas.map((data, index) => {
+        <List
+          style={{ fontFace: FontFace('sans-serif'), height: 300, width: 500 }}
+          numberOfItemsGetter={() => datas.length}
+          itemGetter={(index) => {
+            const data = datas[index];
+
             return (
-              <Group style={{ flexDirection: 'row', marginBottom: 20 }} key={index}>
+              <Group style={{ flexDirection: 'row', marginBottom: 20 }}>
                 <Image src={data.imageUrl} style={{ marginRight: 10, width: 40, height: 40, borderRadius: 20 }}></Image>
 
                 <Group style={{ height: 40, justifyContent: 'space-between' }}>
@@ -29,7 +33,8 @@ storiesOf('List', module).add('infinite scroll', () => {
                 </Group>
               </Group>
             );
-          })}
+          }}
+        >
         </List>
       </Surface>
     </div>

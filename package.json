@@ -63,7 +63,8 @@
     "invariant": "^2.2.4",
     "multi-key-cache": "^1.0.2",
     "prop-types": "^15.6.1",
-    "react-reconciler": "^0.20.4",
-    "scheduler": "^0.14.0"
+    "react-reconciler": "^0.24.0",
+    "scheduler": "^0.18.0",
+    "scroller": "0.0.3"
   }
 }

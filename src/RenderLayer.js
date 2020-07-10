@@ -4,8 +4,6 @@ import * as EventTypes from './EventTypes'
 
 function RenderLayer(component) {
   this.reset(component)
-
-  this.scrollY = 0;
 }
 
 RenderLayer.prototype = {
@@ -192,7 +190,7 @@ RenderLayer.prototype = {
    * @param {Number} x
    * @param {Number} y
    */
-  translate(x, y) {
+  translate(x, y, start, end) {
     if (this.frame) {
       this.frame.x += x
       this.frame.y += y
@@ -204,9 +202,15 @@ RenderLayer.prototype = {
     }
 
     if (this.children) {
-      this.children.forEach(child => {
-        child.translate(x, y)
-      })
+      if (start !== undefined && end !== undefined) {
+        this.children.slice(start, end + 1).forEach(child => {
+          child.translate(x, y);
+        });
+      } else {
+        this.children.forEach(child => {
+          child.translate(x, y);
+        });
+      }
     }
   },
 
