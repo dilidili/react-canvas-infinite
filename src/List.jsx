@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Group } from './Core';
 import { useForceUpdate } from './utils';
 import { Scroller } from 'scroller';
+import clamp from './clamp';
 
 const List = (props) => {
   const {
@@ -117,6 +118,12 @@ const List = (props) => {
     }
   }
 
+  const handleWheel = (e) => {
+    if (scrollerRef.current) {
+      setScrollTop(clamp(scrollTop + e.deltaY, 0, scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight));
+    }
+  }
+
   var items = getVisibleItems();
   return (
     React.createElement(Group, {
@@ -125,7 +132,8 @@ const List = (props) => {
       onTouchStart: handleTouchStart,
       onTouchMove: handleTouchMove,
       onTouchEnd: handleTouchEnd,
-      onTouchCancel: handleTouchEnd
+      onTouchCancel: handleTouchEnd,
+      onWheel: handleWheel,
     }, items)
   );
 }
