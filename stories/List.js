@@ -1,10 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { storiesOf } from '@storybook/react'
 import datas from './data';
 import { Group, Image, Text, Surface, FontFace, List } from '../src/index'
 
 storiesOf('List', module).add('infinite scroll', () => {
   const props = { size: { width: 400, height: 400 } }
+  const [dataList, setDataList] = useState(datas);
 
   return (
     <div>
@@ -19,9 +20,9 @@ storiesOf('List', module).add('infinite scroll', () => {
       >
         <List
           style={{ fontFace: FontFace('sans-serif'), height: 300, width: 500 }}
-          numberOfItemsGetter={() => datas.length}
+          numberOfItemsGetter={() => dataList.length}
           itemGetter={(index) => {
-            const data = datas[index];
+            const data = dataList[index];
 
             return (
               <Group style={{ flexDirection: 'row', marginBottom: 20 }}>
@@ -33,6 +34,14 @@ storiesOf('List', module).add('infinite scroll', () => {
                 </Group>
               </Group>
             );
+          }}
+          onLoadMore={() => {
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                setDataList(datas => datas.concat(datas.slice(0, 3)));
+                resolve();
+              }, 500);
+            });
           }}
         >
         </List>

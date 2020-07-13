@@ -61,8 +61,10 @@
     "css-layout": "^1.1.1",
     "css-line-break": "^1.1.1",
     "invariant": "^2.2.4",
+    "lodash": "^4.17.19",
     "multi-key-cache": "^1.0.2",
     "prop-types": "^15.6.1",
+    "react-motion": "^0.5.2",
     "react-reconciler": "^0.24.0",
     "scheduler": "^0.18.0",
     "scroller": "0.0.3"

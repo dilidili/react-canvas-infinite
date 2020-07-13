@@ -38,12 +38,11 @@ let data = [
     excerpt: 'Passepartout heard the street door shut once; it was his new master going out.  He heard it shut again; it was his predecessor, James Forster, departing in his turn.  Passepartout remained alone in the house in Saville Row. "Faith," muttered Passepartout, somewhat flurried, "I\'ve seen people at Madame Tussaud\'s as lively as my new master!" Madame Tussaud\'s "people," let it be said, are of wax, and are much visited in London; speech is all that is wanting to make them human. During his brief interview with Mr. Fogg, Passepartout had been carefully observing him.',
     imageUrl: 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png'
   },
+  {
+    title: 'The Embarassing Secrets Of Julia Roberts',
+    excerpt: 'Passepartout heard the street door shut once; it was his new master going out.  He heard it shut again; it was his predecessor, James Forster, departing in his turn.  Passepartout remained alone in the house in Saville Row. "Faith," muttered Passepartout, somewhat flurried, "I\'ve seen people at Madame Tussaud\'s as lively as my new master!" Madame Tussaud\'s "people," let it be said, are of wax, and are much visited in London; speech is all that is wanting to make them human. During his brief interview with Mr. Fogg, Passepartout had been carefully observing him.',
+    imageUrl: 'https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png'
+  },
 ]
-
-data = data.concat(data);
-data = data.concat(data);
-data = data.concat(data);
-data = data.concat(data);
-data = data.concat(data);
 
 export default data;

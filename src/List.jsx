@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Group } from './Core';
 import { useForceUpdate } from './utils';
 import { Scroller } from 'scroller';
@@ -10,6 +10,7 @@ const List = (props) => {
     itemGetter,
     numberOfItemsGetter,
     onScroll,
+    onLoadMore,
     scrollingDeceleration = 0.95,
     scrollingPenetrationAcceleration = 0.08,
     preloadBatchSize = 1,
@@ -19,10 +20,19 @@ const List = (props) => {
   const containerRef = useRef();
   const childrenScrollTopRef = useRef([]);
   const [scrollTop, setScrollTop] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const forceUpdate = useForceUpdate();
 
   const handleScroll = (left, top) => {
     setScrollTop(top);
+    if (scrollerRef && !isLoading && top >= scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight) {
+      setIsLoading(true);
+      const loadMorePromise = onLoadMore && onLoadMore();
+      loadMorePromise.then(() => {
+        setIsLoading(false);
+      });
+    }
+
     if (onScroll) {
       onScroll(top);
     }
@@ -53,6 +63,17 @@ const List = (props) => {
     scrollerRef.current.setDimensions(style.width, style.height, scrollWidth, scrollHeight);
     forceUpdate();
   }, []);
+
+  useEffect(() => {
+    const itemCount = numberOfItemsGetter();
+
+    for (let i = 0; i < itemCount; i++) {
+      let itemScrollTop = layer.children[i].frame.y;
+      childrenScrollTopRef.current.push(itemScrollTop);
+      scrollHeight += layer.children[i].frame.height;
+    }
+
+  }, numberOfItemsGetter());
 
   const renderItem = (itemIndex, translateY) => {
     var item = itemGetter(itemIndex, scrollTop);
@@ -118,11 +139,11 @@ const List = (props) => {
     }
   }
 
-  const handleWheel = (e) => {
-    if (scrollerRef.current) {
-      setScrollTop(clamp(scrollTop + e.deltaY, 0, scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight));
-    }
-  }
+  const handleWheel = ({ deltaY }) => {
+    if (scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight < 0) return;
+
+    handleScroll(0, clamp(scrollTop + deltaY, 0, scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight));
+  };
 
   var items = getVisibleItems();
   return (
