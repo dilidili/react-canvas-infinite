@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import layoutNode from './layoutNode'
 import { Group } from './Core';
+import { make } from './FrameUtils'
+import CanvasCromponent from './CanvasComponent';
 import { useForceUpdate } from './utils';
 import { Scroller } from 'scroller';
+import Surface from './Surface';
 import clamp from './clamp';
 
 const List = (props) => {
@@ -25,13 +29,13 @@ const List = (props) => {
 
   const handleScroll = (left, top) => {
     setScrollTop(top);
-    if (scrollerRef && !isLoading && top >= scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight) {
-      setIsLoading(true);
-      const loadMorePromise = onLoadMore && onLoadMore();
-      loadMorePromise.then(() => {
-        setIsLoading(false);
-      });
-    }
+    // if (scrollerRef && !isLoading && top >= scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight) {
+    //   setIsLoading(true);
+    //   const loadMorePromise = onLoadMore && onLoadMore();
+    //   loadMorePromise.then(() => {
+    //     setIsLoading(false);
+    //   });
+    // }
 
     if (onScroll) {
       onScroll(top);
@@ -46,6 +50,16 @@ const List = (props) => {
       decelerationRate: scrollingDeceleration,
       penetrationAcceleration: scrollingPenetrationAcceleration,
     };
+
+
+    setTimeout(() => {
+      const component = new CanvasCromponent();
+      const mountNode = Surface.canvasRenderer.createContainer(component)
+      const s = performance.now();
+      Surface.canvasRenderer.updateContainer(itemGetter(0), mountNode)
+      layoutNode(component.node);
+      console.log(performance.now() - s);
+    }, 200);
 
     scrollerRef.current = new Scroller(handleScroll, options);
 
@@ -64,16 +78,16 @@ const List = (props) => {
     forceUpdate();
   }, []);
 
-  useEffect(() => {
-    const itemCount = numberOfItemsGetter();
+  // useEffect(() => {
+  //   const itemCount = numberOfItemsGetter();
 
-    for (let i = 0; i < itemCount; i++) {
-      let itemScrollTop = layer.children[i].frame.y;
-      childrenScrollTopRef.current.push(itemScrollTop);
-      scrollHeight += layer.children[i].frame.height;
-    }
+  //   for (let i = 0; i < itemCount; i++) {
+  //     let itemScrollTop = layer.children[i].frame.y;
+  //     childrenScrollTopRef.current.push(itemScrollTop);
+  //     scrollHeight += layer.children[i].frame.height;
+  //   }
 
-  }, numberOfItemsGetter());
+  // }, numberOfItemsGetter());
 
   const renderItem = (itemIndex, translateY) => {
     var item = itemGetter(itemIndex, scrollTop);
