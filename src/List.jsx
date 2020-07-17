@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import layoutNode from './layoutNode'
 import { Group } from './Core';
 import { make } from './FrameUtils'
@@ -7,6 +7,8 @@ import { useForceUpdate } from './utils';
 import { Scroller } from 'scroller';
 import Surface from './Surface';
 import clamp from './clamp';
+
+const component = new CanvasCromponent();
 
 const List = (props) => {
   const {
@@ -22,72 +24,67 @@ const List = (props) => {
 
   const scrollerRef = useRef();
   const containerRef = useRef();
+  const mountNodeRef = useRef();
   const childrenScrollTopRef = useRef([]);
   const [scrollTop, setScrollTop] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const forceUpdate = useForceUpdate();
+  const scrollWidth = style.width;
 
   const handleScroll = (left, top) => {
     setScrollTop(top);
-    // if (scrollerRef && !isLoading && top >= scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight) {
-    //   setIsLoading(true);
-    //   const loadMorePromise = onLoadMore && onLoadMore();
-    //   loadMorePromise.then(() => {
-    //     setIsLoading(false);
-    //   });
-    // }
+
+    if (scrollerRef && !isLoading && top >= scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight) {
+      setIsLoading(true);
+      const loadMorePromise = onLoadMore && onLoadMore();
+      loadMorePromise.then(() => {
+        setIsLoading(false);
+      });
+    }
 
     if (onScroll) {
       onScroll(top);
     }
   };
 
+  const computeItemFrame = (i) => {
+    Surface.canvasRenderer.updateContainer(itemGetter(i), mountNodeRef.current);
+    layoutNode(component.node);
+    return component.node.frame;
+  }
+
   useEffect(() => {
     // create scroller.
     const options = {
       scrollingX: false,
       scrollingY: true,
+      animating: true,
       decelerationRate: scrollingDeceleration,
       penetrationAcceleration: scrollingPenetrationAcceleration,
     };
 
+    // create
+    const mountNode = Surface.canvasRenderer.createContainer(component);
+    mountNodeRef.current = mountNode;
 
     setTimeout(() => {
-      const component = new CanvasCromponent();
-      const mountNode = Surface.canvasRenderer.createContainer(component)
+      const itemCount = numberOfItemsGetter();
+      let scrollHeight = 0;
+      
       const s = performance.now();
-      Surface.canvasRenderer.updateContainer(itemGetter(0), mountNode)
-      layoutNode(component.node);
-      console.log(performance.now() - s);
-    }, 200);
+      for (let i = 0; i < itemCount; i++) {
+        const frame = computeItemFrame(i);
+        childrenScrollTopRef.current.push(scrollHeight);
+        let height = frame.height;
+        scrollHeight += height;
+      }
+
+      scrollerRef.current.setDimensions(style.width, style.height, scrollWidth, scrollHeight);
+      forceUpdate();
+    }, 0);
 
     scrollerRef.current = new Scroller(handleScroll, options);
-
-    // update scroller dimensions.
-    let scrollWidth = style.width;
-    let scrollHeight = 0;
-    const layer = containerRef.current.getLayer();
-    const itemCount = numberOfItemsGetter();
-    for (let i = 0; i < itemCount; i++) {
-      let itemScrollTop = layer.children[i].frame.y;
-      childrenScrollTopRef.current.push(itemScrollTop);
-      scrollHeight += layer.children[i].frame.height;
-    }
-
-    scrollerRef.current.setDimensions(style.width, style.height, scrollWidth, scrollHeight);
-    forceUpdate();
   }, []);
-
-  // useEffect(() => {
-  //   const itemCount = numberOfItemsGetter();
-
-  //   for (let i = 0; i < itemCount; i++) {
-  //     let itemScrollTop = layer.children[i].frame.y;
-  //     childrenScrollTopRef.current.push(itemScrollTop);
-  //     scrollHeight += layer.children[i].frame.height;
-  //   }
-
-  // }, numberOfItemsGetter());
 
   const renderItem = (itemIndex, translateY) => {
     var item = itemGetter(itemIndex, scrollTop);
@@ -96,6 +93,22 @@ const List = (props) => {
       React.cloneElement(item, {
         key: itemIndex,
         useBackingStore: !!(item.props.useBackingStore && scrollerRef.current),
+        ref: (ref) => {
+          if (ref) {
+            const scrollTopList = childrenScrollTopRef.current;
+            if (scrollTopList[itemIndex] == null) {
+              for(let i = itemIndex - 1; i >= 0; i--) {
+                if (scrollTopList[i] != null) {
+                  const computedFrame = computeItemFrame(itemIndex);
+                  scrollTopList[itemIndex] = scrollTopList[i] + computedFrame.height;
+                  scrollerRef.current.setDimensions(style.width, style.height, scrollWidth, scrollTopList[itemIndex] + computedFrame.height);
+                  break;
+                }
+              }
+
+            }
+          }
+        },
         style: {
           ...(item.props.style || {}),
           // prevent run out of backingStore when render all items.
@@ -154,9 +167,9 @@ const List = (props) => {
   }
 
   const handleWheel = ({ deltaY }) => {
-    if (scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight < 0) return;
-
-    handleScroll(0, clamp(scrollTop + deltaY, 0, scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight));
+    if (scrollerRef.current) {
+      scrollerRef.current.scrollBy(0, deltaY);
+    }
   };
 
   var items = getVisibleItems();
@@ -164,6 +177,7 @@ const List = (props) => {
     React.createElement(Group, {
       ref: containerRef,
       style: style,
+      scrollable: true, 
       onTouchStart: handleTouchStart,
       onTouchMove: handleTouchMove,
       onTouchEnd: handleTouchEnd,

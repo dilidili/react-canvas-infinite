@@ -119,10 +119,12 @@ export default class CanvasComponent {
     const layer = this.node
 
     // Generate backing store ID as needed.
-    if (props.useBackingStore && layer.backingStoreId !== this._layerId) {
-      layer.backingStoreId = this._layerId
-    } else if (!props.useBackingStore && layer.backingStoreId) {
+    if ((props.useBackingStore || props.scrollable) && layer.backingStoreId !== this._layerId) {
+      layer.backingStoreId = this._layerId;
+      layer.scrollable = !!props.scrollable;
+    } else if (!(props.useBackingStore || props.scrollable) && layer.backingStoreId) {
       layer.backingStoreId = null
+      layer.scrollable = false;
     }
 
     // Register events

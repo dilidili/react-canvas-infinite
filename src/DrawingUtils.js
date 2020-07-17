@@ -462,7 +462,7 @@ drawCacheableRenderLayer = (ctx, layer, drawFunction) => {
   const frameOffsetX = layer.frame.x;
   let backingContext
 
-  const shouldRedraw = !backingStore;
+  const shouldRedraw = !backingStore || !!layer.scrollable;
   if (!backingStore) {
     if (_backingStores.length >= Canvas.poolSize) {
       // Re-use the oldest backing store once we reach the pooling limit.
