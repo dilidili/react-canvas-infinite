@@ -6,7 +6,9 @@ import Canvas from './Canvas'
 import DebugCanvasContext from './DebugCanvasContext'
 
 // Global backing store <canvas> cache
-let _backingStores = []
+let _backingStores: ({
+  id: string;
+})[] = [];
 
 /**
  * Maintain a cache of backing <canvas> for RenderLayer's which are accessible
@@ -29,11 +31,11 @@ function getBackingStore(id) {
  *
  * @param {String} id The layer's backingStoreId
  */
-function invalidateBackingStore(id) {
+function invalidateBackingStore(id: string) {
   for (let i = 0, len = _backingStores.length; i < len; i++) {
     if (_backingStores[i].id === id) {
-      _backingStores.splice(i, 1)
-      break
+      _backingStores.splice(i, 1);
+      break;
     }
   }
 }

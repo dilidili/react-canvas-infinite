@@ -92,7 +92,9 @@ function getLayerAtPoint(root, type, point, tx, ty) {
  * @param {?HTMLElement} rootNode
  * @return {RenderLayer}
  */
-function hitTest(e, rootLayer, rootNode) {
+function hitTest(e: {
+  touches?: any,
+}, rootLayer, rootNode) {
   const touch = e.touches ? e.touches[0] : e
   let touchX = touch.pageX
   let touchY = touch.pageY

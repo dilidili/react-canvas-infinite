@@ -1,49 +1,47 @@
 import { zero } from './FrameUtils'
 import { invalidateBackingStore } from './DrawingUtils'
+import { Frame } from './FrameUtils';
 import * as EventTypes from './EventTypes'
 
-function RenderLayer(component) {
-  this.reset(component)
-}
+class RenderLayer {
+  constructor(frame: Frame) {
+    this.frame = frame;
+    this.reset();
+  }
 
-RenderLayer.prototype = {
+  frame: Frame;
+  backingStoreId?: string;
+  children: RenderLayer[] = [];
+
   /**
    * Resets all the state on this RenderLayer so it can be added to a pool for re-use.
-   *
-   * @return {RenderLayer}
    */
-  reset(component) {
+  reset() {
     if (this.backingStoreId) {
-      invalidateBackingStore(this.backingStoreId)
+      invalidateBackingStore(this.backingStoreId);
     }
 
     for (const key in this) {
-      // eslint-disable-next-line no-continue
-      if (key === 'children' || key === 'frame' || key === 'component') continue
-      const value = this[key]
+      if (key === 'children' || key === 'frame') continue;
+      const value = this[key];
 
-      // eslint-disable-next-line no-continue
-      if (typeof value === 'function') continue
-      this[key] = null
+      if (typeof value === 'function') continue;
+      this[key] = null;
     }
 
     if (this.children) {
-      this.children.length = 0
+      this.children.length = 0;
     } else {
-      this.children = []
+      this.children = [];
     }
 
     if (this.frame) {
-      this.frame.x = null
-      this.frame.y = null
-      this.frame.width = null
-      this.frame.height = null
-    } else {
-      this.frame = zero()
+      this.frame.x = 0;
+      this.frame.y = 0;
+      this.frame.width = 0;
+      this.frame.height = 0;
     }
-
-    this.component = component
-  },
+  }
 
   /**
    * Retrieve the root injection layer

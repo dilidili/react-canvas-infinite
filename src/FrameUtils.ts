@@ -1,21 +1,12 @@
-function Frame(x, y, width, height) {
-  this.x = x
-  this.y = y
-  this.width = width
-  this.height = height
+export class Frame {
+  constructor(public x: number, public y: number, public width: number, public height: number) {}
 }
 
 /**
  * Get a frame object
- *
- * @param {Number} x
- * @param {Number} y
- * @param {Number} width
- * @param {Number} height
- * @return {Frame}
  */
-function make(x, y, width, height) {
-  return new Frame(x, y, width, height)
+function make(x: number, y: number, width: number, height: number) {
+  return new Frame(x, y, width, height);
 }
 
 /**

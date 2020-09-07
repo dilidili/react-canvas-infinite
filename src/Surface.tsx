@@ -1,37 +1,191 @@
-import React from 'react'
-import PropTypes from 'prop-types'
-import RenderLayer from './RenderLayer'
-import { make } from './FrameUtils'
-import { drawRenderLayer } from './DrawingUtils'
-import hitTest from './hitTest'
-import layoutNode from './layoutNode'
-import DebugCanvasContext from './DebugCanvasContext'
+import React, { useRef, useMemo, useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import RenderLayer from './RenderLayer';
+import { make } from './FrameUtils';
+import { drawRenderLayer } from './DrawingUtils';
+import { CanvasRenderer } from './CanvasRenderer';
+import hitTest from './hitTest';
+import layoutNode from './layoutNode';
+import DebugCanvasContext from './DebugCanvasContext';
 
 const MOUSE_CLICK_DURATION_MS = 300
+const scale = window.devicePixelRatio || 1;
+
+type SurfaceElement = HTMLCanvasElement | HTMLDivElement;
+type SurfaceProps = {
+  enableDebug: boolean,
+} & React.CanvasHTMLAttributes<SurfaceElement>;
+
+const Surface: React.FC<SurfaceProps> = ({
+  enableDebug,
+  width,
+  height,
+  children,
+  ...otherProps
+}) => {
+  const [canvasWidth, setCanvasWidth] = useState<number>(+width || 0);
+  const [canvasHeight, setCanvasHeight] = useState<number>(+height || 0);
+
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const nodeRef = useRef<any>(null);
+  const mountNodeRef = useRef<any>(null);
+  const renderSchedulerRef = useRef<{
+    _frameReady: boolean;
+    _pendingTick: boolean;
+    _nextTickRecomputeLayout: boolean;
+  }>({
+    _frameReady: false,
+    _pendingTick: false,
+    _nextTickRecomputeLayout: true,
+  });
+
+  const getContext = () => {
+    return canvasRef.current.getContext('2d');
+  };
+
+  useEffect(() => {
+    let layerWidth = +width, layerHeight = +height;
+
+    // Scale the drawing area to match DPI.
+    if (!layerWidth || !layerHeight) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      layerWidth = rect.width;
+      layerHeight = rect.height;
+
+      setCanvasWidth(layerWidth * scale);
+      setCanvasHeight(layerHeight * scale);
+      getContext().scale(scale, scale);
+    }
+
+    const frame = make(0, 0, layerWidth, layerHeight);
+    const node = nodeRef.current = new RenderLayer(frame);
+    node.draw = this.batchedTick;
+
+    mountNodeRef.current = CanvasRenderer.createContainer();
+    CanvasRenderer.updateContainer(children, mountNodeRef.current);
+
+    // Execute initial draw on mount.
+    batchedTick();
+  }, []);
+
+  // render scheduler.
+  const batchedTick = (recomputeLayout = false) => {
+    const renderScheduler = renderSchedulerRef.current;
+
+    if (renderScheduler._frameReady === false) {
+      renderScheduler._pendingTick = true;
+      renderScheduler._nextTickRecomputeLayout = recomputeLayout;
+      return;
+    }
+
+    tick(recomputeLayout);
+  }
+
+  const tick = (recomputeLayout) => {
+    const renderScheduler = renderSchedulerRef.current;
+
+    // Block updates until next animation frame.
+    renderScheduler._frameReady = false;
+    clear();
+    draw(recomputeLayout);
+    requestAnimationFrame(afterTick);
+  }
+
+  const afterTick = () => {
+    const renderScheduler = renderSchedulerRef.current;
+
+    // Execute pending draw that may have been scheduled during previous frame
+    renderScheduler._frameReady = true;
+
+    // canvas might be already removed from DOM
+    if (renderScheduler._pendingTick && canvasRef.current) {
+      renderScheduler._pendingTick = false;
+      batchedTick(renderScheduler._nextTickRecomputeLayout);
+      renderScheduler._nextTickRecomputeLayout = true;
+    }
+  }
+
+  const clear = () => {
+    getContext().clearRect(0, 0, canvasWidth, canvasHeight);
+  }
+
+  const draw = (recomputeLayout = true) => {
+    if (this.node) {
+      if (this.props.enableCSSLayout && recomputeLayout) {
+        layoutNode(this.node);
+      }
+
+      drawRenderLayer(this.getContext(), this.node);
+
+      if (this.props.enableDebug) {
+        this.canvas.appendChild(this.node.containerInfo);
+      }
+    }
+  }
+
+  let style = undefined;
+  if (enableDebug) {
+    style = { ...(otherProps.style || {}), position: 'relative', };
+  }
+
+  const eventHanlders = useMemo(() => {
+    const onTouchStart: React.TouchEventHandler<SurfaceElement> = (e) => {
+      const hitTarget = hitTest(e, nodeRef.current, canvasRef.current);
+
+      let touch;
+      if (hitTarget) {
+        // On touchstart: capture the current hit target for the given touch.
+        this._touches = this._touches || {}
+
+        for (let i = 0, len = e.touches.length; i < len; i++) {
+          touch = e.touches[i]
+          this._touches[touch.identifier] = hitTarget
+        }
+        hitTarget[hitTest.getHitHandle(e.type)](e)
+      }
+    };
+  }, []);
+
+
+  const props = {
+    ref: this.setCanvasRef,
+    className: this.props.className,
+    id: this.props.id,
+    width,
+    height,
+    style,
+    onTouchStart: this.handleTouchStart,
+    onTouchMove: this.handleTouchMove,
+    onTouchEnd: this.handleTouchEnd,
+    onTouchCancel: this.handleTouchEnd,
+    onMouseDown: this.handleMouseEvent,
+    onMouseUp: this.handleMouseEvent,
+    onMouseMove: this.handleMouseEvent,
+    onMouseOver: this.handleMouseEvent,
+    onMouseOut: this.handleMouseEvent,
+    onContextMenu: this.handleContextMenu,
+    onClick: this.handleMouseEvent,
+    onDoubleClick: this.handleMouseEvent,
+    onWheel: this.handleScroll,
+  };
+
+  if (!enableDebug) {
+    return (
+      <canvas 
+        ref={canvasRef}
+        width={canvasWidth}
+        height={canvasHeight}
+        {...otherProps}
+      />
+    );
+  }
+};
 
 /**
  * Surface is a standard React component and acts as the main drawing canvas.
  * ReactCanvas components cannot be rendered outside a Surface.
- */
-class Surface extends React.Component {
-  static displayName = 'Surface'
-
-  static propTypes = {
-    className: PropTypes.string,
-    id: PropTypes.string,
-    top: PropTypes.number.isRequired,
-    left: PropTypes.number.isRequired,
-    width: PropTypes.number.isRequired,
-    height: PropTypes.number.isRequired,
-    scale: PropTypes.number,
-    enableCSSLayout: PropTypes.bool,
-    enableDebug: PropTypes.bool,
-    children: PropTypes.node.isRequired,
-    // eslint-disable-next-line react/forbid-prop-types
-    style: PropTypes.object,
-    // eslint-disable-next-line react/forbid-prop-types
-    canvas: PropTypes.object
-  }
+class Surface extends React.Component<SurfaceProps> {
+  static displayName = 'Surface';
 
   static defaultProps = {
     scale: window.devicePixelRatio || 1,
@@ -322,5 +476,6 @@ class Surface extends React.Component {
     })
   }
 }
+*/
 
-export default Surface
+export default Surface;

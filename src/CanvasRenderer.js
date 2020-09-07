@@ -1,6 +1,6 @@
 import React from 'react'
 import invariant from 'invariant'
-import ReactFiberReconciler from 'react-reconciler'
+import ReactFiberReconciler from 'react-reconciler';
 import {
   unstable_now as now,
   unstable_shouldYield as shouldYield,
@@ -217,7 +217,7 @@ const CanvasHostConfig = {
   }
 }
 
-const CanvasRenderer = ReactFiberReconciler(CanvasHostConfig)
+const CanvasRenderer = ReactFiberReconciler(CanvasHostConfig);
 
 CanvasRenderer.injectIntoDevTools({
   findFiberByHostInstance: getClosestInstanceFromNode,
