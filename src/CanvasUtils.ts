@@ -1,6 +1,8 @@
 import clamp from './clamp'
 import measureText from './measureText'
 import DebugCanvasContext from './DebugCanvasContext'
+import { Img } from './ImageCache';
+import { ImageRenderLayer } from './RenderLayer';
 
 /**
  * Draw an image into a <canvas>. This operation requires that the image
@@ -18,76 +20,73 @@ import DebugCanvasContext from './DebugCanvasContext'
  *   {Object} focusPoint {x,y}
  *   {String} backgroundColor
  */
-function drawImage(ctx, image, layer, options) {
+function drawImage(ctx: CanvasRenderingContext2D | DebugCanvasContext, image: Img, layer: ImageRenderLayer, options?: {
+  originalHeight?: number,
+  backgroundColor?: string,
+  focusPoint?: {
+    x: number,
+    y: number,
+  },
+}) {
   const { x, y, width, height } = layer.frame;
-  options = options || {}
 
-  let dx = 0
-  let dy = 0
-  let dw = 0
-  let dh = 0
-  let sx = 0
-  let sy = 0
-  let sw = 0
-  let sh = 0
-  let scale
-  let { focusPoint } = options
+  let dx = 0;
+  let dy = 0;
+  let dw = 0;
+  let dh = 0;
+  let sx = 0;
+  let sy = 0;
+  let sw = 0;
+  let sh = 0;
+  let scale: number;
+  let focusPoint = options ? options.focusPoint : undefined;
 
   const actualSize = {
     width: image.getWidth(),
-    height: image.getHeight()
-  }
+    height: image.getHeight(),
+  };
 
-  scale = Math.max(width / actualSize.width, height / actualSize.height) || 1
-  scale = parseFloat(scale.toFixed(4), 10)
-
+  // scale to contain.
+  scale = Math.max(width / actualSize.width, height / actualSize.height) || 1;
+  scale = parseFloat(scale.toFixed(4));
   const scaledSize = {
     width: actualSize.width * scale,
     height: actualSize.height * scale
-  }
+  };
 
-  if (focusPoint) {
+  if (options && focusPoint) {
     // Since image hints are relative to image "original" dimensions (original != actual),
     // use the original size for focal point cropping.
     if (options.originalHeight) {
-      focusPoint.x *= actualSize.height / options.originalHeight
-      focusPoint.y *= actualSize.height / options.originalHeight
+      focusPoint.x *= actualSize.height / options.originalHeight;
+      focusPoint.y *= actualSize.height / options.originalHeight;
     }
   } else {
     // Default focal point to [0.5, 0.5]
     focusPoint = {
       x: actualSize.width * 0.5,
-      y: actualSize.height * 0.5
+      y: actualSize.height * 0.5,
     }
   }
 
   // Clip the image to rectangle (sx, sy, sw, sh).
-  sx =
-    Math.round(
-      clamp(width * 0.5 - focusPoint.x * scale, width - scaledSize.width, 0)
-    ) *
-    (-1 / scale)
-  sy =
-    Math.round(
-      clamp(height * 0.5 - focusPoint.y * scale, height - scaledSize.height, 0)
-    ) *
-    (-1 / scale)
-  sw = Math.round(actualSize.width - sx * 2)
-  sh = Math.round(actualSize.height - sy * 2)
+  sx = Math.round(clamp(width * 0.5 - focusPoint.x * scale, width - scaledSize.width, 0)) * (-1 / scale);
+  sy = Math.round(clamp(height * 0.5 - focusPoint.y * scale, height - scaledSize.height, 0)) * (-1 / scale);
+  sw = Math.round(actualSize.width - sx * 2);
+  sh = Math.round(actualSize.height - sy * 2);
 
   // Scale the image to dimensions (dw, dh).
-  dw = Math.round(width)
-  dh = Math.round(height)
+  dw = Math.round(width);
+  dh = Math.round(height);
 
   // Draw the image on the canvas at coordinates (dx, dy).
-  dx = Math.round(x)
-  dy = Math.round(y)
+  dx = Math.round(x);
+  dy = Math.round(y);
 
   if (ctx instanceof DebugCanvasContext) {
-
     const img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = image._originalSrc;
+    img.src = image.getOriginalSrc();
     img.style.position = 'absolute';
     img.style.width = `${dw}px`;
     img.style.height = `${dh}px`;
@@ -96,16 +95,18 @@ function drawImage(ctx, image, layer, options) {
     img.style.clip = `${sy}px ${sx + sw}px ${sy + sh}px ${sx}px`;
 
     const element = layer.containerInfo;
-    element.appendChild(img);
+    if (element) {
+      element.appendChild(img);
+    }
   } else {
-    if (options.backgroundColor) {
-      ctx.save()
-      ctx.fillStyle = options.backgroundColor
-      ctx.fillRect(x, y, width, height)
-      ctx.restore()
+    if (options && options.backgroundColor) {
+      ctx.save();
+      ctx.fillStyle = options.backgroundColor;
+      ctx.fillRect(x, y, width, height);
+      ctx.restore();
     }
 
-    ctx.drawImage(image.getRawImage(), sx, sy, sw, sh, dx, dy, dw, dh)
+    ctx.drawImage(image.getRawImage(), sx, sy, sw, sh, dx, dy, dw, dh);
   }
 }
 

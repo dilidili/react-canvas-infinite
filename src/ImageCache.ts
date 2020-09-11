@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 
 const NOOP = () => {};
 
-class Img extends EventEmitter {
+export class Img extends EventEmitter {
   constructor(private _originalSrc: string) {
     super();
 

@@ -1,9 +1,10 @@
 import { zero } from './FrameUtils'
 import { invalidateBackingStore } from './DrawingUtils'
 import { Frame } from './FrameUtils';
+import FontFace from './FontFace';
 import * as EventTypes from './EventTypes'
 
-type LayerType = 'image';
+type LayerType = 'image' | 'text';
 
 class RenderLayer {
   constructor(frame: Frame) {
@@ -267,7 +268,22 @@ class RenderLayer {
 export class ImageRenderLayer extends RenderLayer {
   constructor(frame: Frame, public imageUrl: string) {
     super(frame);
+
+    this.type = 'image';
   }
+}
+
+export class TextRenderLayer extends RenderLayer {
+  constructor(frame: Frame, fontUrl?: string) {
+    super(frame);
+
+    this.type = 'text';
+
+    // Fallback to standard font.
+    const fontFace = fontUrl ? new FontFace() : FontFace.Default();
+  }
+
+  fontFace: FontFace;
 }
 
 export default RenderLayer;

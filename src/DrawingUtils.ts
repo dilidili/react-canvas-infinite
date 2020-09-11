@@ -4,7 +4,7 @@ import FontFace from './FontFace'
 import { drawGradient, drawText, drawImage } from './CanvasUtils'
 import Canvas from './Canvas'
 import DebugCanvasContext from './DebugCanvasContext';
-import RenderLayer, { ImageRenderLayer } from './RenderLayer';
+import RenderLayer, { ImageRenderLayer, TextRenderLayer } from './RenderLayer';
 
 // Global backing store <canvas> cache
 let _backingStores: ({
@@ -255,11 +255,8 @@ function drawImageRenderLayer(ctx: CanvasRenderingContext2D, layer: ImageRenderL
 /**
  * @private
  */
-function drawTextRenderLayer(ctx, layer) {
-  drawBaseRenderLayer(ctx, layer)
-
-  // Fallback to standard font.
-  const fontFace = layer.fontFace || FontFace.Default()
+function drawTextRenderLayer(ctx: CanvasRenderingContext2D, layer: TextRenderLayer) {
+  drawBaseRenderLayer(ctx, layer);
 
   // Don't draw text until loaded
   if (!isFontLoaded(fontFace)) {
