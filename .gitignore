@@ -1,6 +1,7 @@
 node_modules
 npm-debug.log
 .idea
+.DS_Store
 storybook-static
 dist
 yarn-error.log

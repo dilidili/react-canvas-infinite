@@ -1,5 +1,4 @@
 import React, { useRef, useMemo, useState, useEffect } from 'react';
-import PropTypes from 'prop-types';
 import RenderLayer from './RenderLayer';
 import { make } from './FrameUtils';
 import { drawRenderLayer } from './DrawingUtils';
@@ -111,7 +110,7 @@ const Surface: React.FC<SurfaceProps> = ({
 
   const draw = (recomputeLayout = true) => {
     if (this.node) {
-      if (this.props.enableCSSLayout && recomputeLayout) {
+      if (recomputeLayout) {
         layoutNode(this.node);
       }
 

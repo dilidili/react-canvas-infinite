@@ -1,35 +1,33 @@
-import ImageCache from './ImageCache'
+import ImageCache from './ImageCache';
 import { isFontLoaded } from './FontUtils'
 import FontFace from './FontFace'
 import { drawGradient, drawText, drawImage } from './CanvasUtils'
 import Canvas from './Canvas'
-import DebugCanvasContext from './DebugCanvasContext'
+import DebugCanvasContext from './DebugCanvasContext';
+import RenderLayer, { ImageRenderLayer } from './RenderLayer';
 
 // Global backing store <canvas> cache
 let _backingStores: ({
   id: string;
+  canvas: HTMLCanvasElement,
 })[] = [];
 
 /**
  * Maintain a cache of backing <canvas> for RenderLayer's which are accessible
  * through the RenderLayer's `backingStoreId` property.
- *
- * @param {String} id The unique `backingStoreId` for a RenderLayer
- * @return {HTMLCanvasElement}
  */
-function getBackingStore(id) {
+function getBackingStore(id: string) {
   for (let i = 0, len = _backingStores.length; i < len; i++) {
     if (_backingStores[i].id === id) {
-      return _backingStores[i].canvas
+      return _backingStores[i].canvas;
     }
   }
-  return null
+
+  return null;
 }
 
 /**
  * Purge a layer's backing store from the cache.
- *
- * @param {String} id The layer's backingStoreId
  */
 function invalidateBackingStore(id: string) {
   for (let i = 0, len = _backingStores.length; i < len; i++) {
@@ -44,15 +42,11 @@ function invalidateBackingStore(id: string) {
  * Purge the entire backing store cache.
  */
 function invalidateAllBackingStores() {
-  _backingStores = []
+  _backingStores = [];
 }
 
 /**
  * Check if a layer is using a given image URL.
- *
- * @param {RenderLayer} layer
- * @param {String} imageUrl
- * @return {Boolean}
  */
 function layerContainsImage(layer, imageUrl) {
   // Check the layer itself.
@@ -132,15 +126,12 @@ function handleFontLoad(fontFace) {
 /**
  * Draw base layer properties into a rendering context.
  * NOTE: The caller is responsible for calling save() and restore() as needed.
- *
- * @param {CanvasRenderingContext2d} ctx
- * @param {RenderLayer} layer
  */
-function drawBaseRenderLayer(ctx, layer) {
-  const { frame } = layer
+function drawBaseRenderLayer(ctx: CanvasRenderingContext2D | DebugCanvasContext, layer: RenderLayer) {
+  const { frame } = layer;
 
   if (ctx instanceof DebugCanvasContext) {
-    const nextElement = ctx.initNextElement(layer);
+    const nextElement = ctx.initNextElement();
 
     if (layer.borderRadius) {
       nextElement.style.borderRadius = `${layer.borderRadius}px`;
@@ -163,104 +154,102 @@ function drawBaseRenderLayer(ctx, layer) {
     nextElement.style.height = `${frame.height}px`;
 
     layer.containerInfo = nextElement;
+
     if (layer.parentLayer && layer.parentLayer.containerInfo) {
       layer.parentLayer.containerInfo.appendChild(nextElement);
     }
   } else {
-    // Border radius:
     if (layer.borderRadius) {
-      ctx.beginPath()
-      ctx.moveTo(frame.x + layer.borderRadius, frame.y)
+      // draw borders.
+      ctx.beginPath();
+      ctx.moveTo(frame.x + layer.borderRadius, frame.y);
       ctx.arcTo(
         frame.x + frame.width,
         frame.y,
         frame.x + frame.width,
         frame.y + frame.height,
         layer.borderRadius
-      )
+      );
       ctx.arcTo(
         frame.x + frame.width,
         frame.y + frame.height,
         frame.x,
         frame.y + frame.height,
         layer.borderRadius
-      )
+      );
       ctx.arcTo(
         frame.x,
         frame.y + frame.height,
         frame.x,
         frame.y,
         layer.borderRadius
-      )
+      );
       ctx.arcTo(
         frame.x,
         frame.y,
         frame.x + frame.width,
         frame.y,
         layer.borderRadius
-      )
-      ctx.closePath()
+      );
+      ctx.closePath();
 
       // Create a clipping path when drawing an image or using border radius.
       if (layer.type === 'image') {
-        ctx.clip()
+        ctx.clip();
       }
 
-      // Border with border radius:
+      // Border with border radius.
       if (layer.borderColor) {
-        ctx.lineWidth = layer.borderWidth || 1
-        ctx.strokeStyle = layer.borderColor
-        ctx.stroke()
+        ctx.lineWidth = layer.borderWidth || 1;
+        ctx.strokeStyle = layer.borderColor;
+        ctx.stroke();
       }
     }
 
-    // Border color (no border radius):
+    // Border color (no border radius).
     if (layer.borderColor && !layer.borderRadius) {
-      ctx.lineWidth = layer.borderWidth || 1
-      ctx.strokeStyle = layer.borderColor
-      ctx.strokeRect(frame.x, frame.y, frame.width, frame.height)
+      ctx.lineWidth = layer.borderWidth || 1;
+      ctx.strokeStyle = layer.borderColor;
+      ctx.strokeRect(frame.x, frame.y, frame.width, frame.height);
     }
 
-    // Shadow:
-    ctx.shadowBlur = layer.shadowBlur
-    ctx.shadowColor = layer.shadowColor
-    ctx.shadowOffsetX = layer.shadowOffsetX
-    ctx.shadowOffsetY = layer.shadowOffsetY
+    // Shadow.
+    layer.shadowBlur && (ctx.shadowBlur = layer.shadowBlur);
+    layer.shadowColor && (ctx.shadowColor = layer.shadowColor);
+    layer.shadowOffsetX && (ctx.shadowOffsetX = layer.shadowOffsetX);
+    layer.shadowOffsetY && (ctx.shadowOffsetY = layer.shadowOffsetY);
 
-    // Background color:
+    // Background color.
     if (layer.backgroundColor) {
-      ctx.fillStyle = layer.backgroundColor
+      ctx.fillStyle = layer.backgroundColor;
       if (layer.borderRadius) {
         // Fill the current path when there is a borderRadius set.
-        ctx.fill()
+        ctx.fill();
       } else {
-        ctx.fillRect(frame.x, frame.y, frame.width, frame.height)
+        ctx.fillRect(frame.x, frame.y, frame.width, frame.height);
       }
     }
   }
 }
 
-/**
- * @private
- */
-function drawImageRenderLayer(ctx, layer) {
-  drawBaseRenderLayer(ctx, layer)
+function drawImageRenderLayer(ctx: CanvasRenderingContext2D, layer: ImageRenderLayer) {
+  drawBaseRenderLayer(ctx, layer);
 
   if (!layer.imageUrl) {
-    return
+    return;
   }
 
   // Don't draw until loaded
-  const image = ImageCache.get(layer.imageUrl)
+  const image = ImageCache.get(layer.imageUrl);
   if (!image.isLoaded()) {
-    return
+    return;
   }
 
   drawImage(
     ctx,
     image,
     layer,
-  )
+  );
 }
 
 /**
@@ -456,7 +445,7 @@ drawRenderLayer = (ctx, layer) => {
  * @param {Function} drawFunction
  * @private
  */
-drawCacheableRenderLayer = (ctx, layer, drawFunction) => {
+drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer, drawFunction) => {
   // See if there is a pre-drawn canvas in the pool.
   let backingStore = getBackingStore(layer.backingStoreId)
   const backingStoreScale = layer.scale || window.devicePixelRatio

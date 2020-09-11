@@ -3,15 +3,31 @@ import { invalidateBackingStore } from './DrawingUtils'
 import { Frame } from './FrameUtils';
 import * as EventTypes from './EventTypes'
 
+type LayerType = 'image';
+
 class RenderLayer {
   constructor(frame: Frame) {
     this.frame = frame;
     this.reset();
   }
 
+  type: LayerType;
   frame: Frame;
   backingStoreId?: string;
+  containerInfo?: HTMLDivElement;
+
+  parentLayer?: RenderLayer;
   children: RenderLayer[] = [];
+
+  // styles
+  borderRadius?: number;
+  borderColor?: string;
+  backgroundColor?: string;
+  borderWidth?: number;
+  shadowBlur?: number;
+  shadowColor?: string;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
 
   /**
    * Resets all the state on this RenderLayer so it can be added to a pool for re-use.
@@ -248,4 +264,10 @@ class RenderLayer {
   }
 }
 
-export default RenderLayer
+export class ImageRenderLayer extends RenderLayer {
+  constructor(frame: Frame, public imageUrl: string) {
+    super(frame);
+  }
+}
+
+export default RenderLayer;

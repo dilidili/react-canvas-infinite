@@ -49,7 +49,7 @@ class DebugCanvasContext {
     });
   } 
 
-  initNextElement = (layer) => {
+  initNextElement = () => {
     const element = document.createElement('div');
     element.style.position = 'absolute';
     element.style.overflow = 'hidden';
