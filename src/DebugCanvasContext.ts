@@ -6,8 +6,9 @@ const PropsWillBeSaved = [
   'translateY',
 ];
 
-class DebugCanvasContext {
+class DebugCanvasContext extends CanvasRenderingContext2D {
   constructor(instance) {
+    super();
     this.instance = instance;
   }
 

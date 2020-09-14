@@ -1,64 +1,61 @@
 import MultiKeyCache from 'multi-key-cache';
 
-type FontKey = [string, ]
-const _fontFaces = new MultiKeyCache<[]>();
+type FontCacheKey = [string, (FontAttribute | undefined), (string | undefined)];
+export type FontCacheValue = {
+  id: string;
+  family: string;
+  url?: string;
+  attributes: FontAttribute;
+};
+const _fontFaces = new MultiKeyCache<FontCacheKey, FontCacheValue>();
 
 interface FontAttribute {
-  style?: string;
+  style?: 'normal' | 'italic' | 'oblique';
   weight?: number;
 }
 
 /**
  * @internal
  */
-function getCacheKey(family: string, url: string, attributes: FontAttribute) {
-  const cacheKey = [family, url];
-
-  for (const entry of Object.entries(attributes)) {
-    cacheKey.push(entry[0]);
-    cacheKey.push(entry[1]);
-  }
+function getCacheKey(family: string, attributes?: FontAttribute, url?: string): FontCacheKey {
+  const cacheKey: FontCacheKey = [family, attributes, url];
 
   return cacheKey;
 }
 
-/**
- * @param {String} family The CSS font-family value
- * @param {String} url The remote URL for the font file
- * @param {Object} attributes Font attributes supported: style, weight
- * @return {Object}
- */
-class FontFace {
-  constructor(public family: string, public url: string, public attributes?: FontAttribute) {
-    let fontFace;
+export class FontFace {
+  // Helper for retrieving the default family by weight.
+  static Default = (fontWeight: number) => {
+    return new FontFace('sans-serif', { weight: fontWeight });
+  }
+
+  constructor(public family: string, public attributes?: FontAttribute, url?: string) {
+    let fontFace: FontCacheValue;
 
     const fontStyle = (attributes ? attributes.style : '') || 'normal';
     const fontWeight = (attributes ? attributes.weight : 0) || 400;
 
-    const cacheKey = getCacheKey(family, url, attributes);
-    fontFace = _fontFaces.get(cacheKey)
+    attributes = {
+      style: fontStyle,
+      weight: fontWeight,
+    };
+
+    const cacheKey = getCacheKey(family, attributes, url);
+    fontFace = _fontFaces.get(cacheKey);
 
     if (!fontFace) {
-      fontFace = {}
-      fontFace.id = JSON.stringify(cacheKey)
-      fontFace.family = family
-      fontFace.url = url
-      fontFace.attributes = attributes
-      _fontFaces.set(cacheKey, fontFace)
+      fontFace = {
+        id: JSON.stringify(cacheKey),
+        family,
+        url,
+        attributes,
+      };
+
+      _fontFaces.set(cacheKey, fontFace);
     }
 
-    return fontFace
+    return fontFace;
   }
 }
 
-/**
- * Helper for retrieving the default family by weight.
- *
- * @param {Number} fontWeight
- * @return {FontFace}
- */
-FontFace.Default = fontWeight => {
-  return FontFace('sans-serif', null, { weight: fontWeight })
-}
-
-export default FontFace
+export default FontFace;

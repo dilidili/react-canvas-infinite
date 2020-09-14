@@ -39,6 +39,8 @@
   },
   "peerDependencies": {},
   "dependencies": {
+    "@types/css-font-loading-module": "0.0.4",
+    "css-line-break": "^1.1.1",
     "events": "^3.2.0",
     "multi-key-cache": "^1.0.2"
   }

@@ -1,7 +1,7 @@
 import { zero } from './FrameUtils'
 import { invalidateBackingStore } from './DrawingUtils'
 import { Frame } from './FrameUtils';
-import FontFace from './FontFace';
+import { FontFace } from './FontFace';
 import * as EventTypes from './EventTypes'
 
 type LayerType = 'image' | 'text';
@@ -274,16 +274,19 @@ export class ImageRenderLayer extends RenderLayer {
 }
 
 export class TextRenderLayer extends RenderLayer {
-  constructor(frame: Frame, fontUrl?: string) {
+  constructor(frame: Frame, text: string, fontUrl?: string) {
     super(frame);
 
     this.type = 'text';
+    this.text = texta;
 
     // Fallback to standard font.
-    const fontFace = fontUrl ? new FontFace() : FontFace.Default();
+    this.fontFace = fontUrl ? new FontFace() : FontFace.Default();
   }
 
+  text: string;
   fontFace: FontFace;
+  containerInfo?: HTMLDivElement;
 }
 
 export default RenderLayer;

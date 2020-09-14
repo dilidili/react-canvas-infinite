@@ -1,8 +1,9 @@
-import clamp from './clamp'
-import measureText from './measureText'
-import DebugCanvasContext from './DebugCanvasContext'
+import clamp from './clamp';
+import measureText from './measureText';
+import DebugCanvasContext from './DebugCanvasContext';
 import { Img } from './ImageCache';
-import { ImageRenderLayer } from './RenderLayer';
+import { ImageRenderLayer, TextRenderLayer } from './RenderLayer';
+import { FontCacheValue } from './FontFace';
 
 /**
  * Draw an image into a <canvas>. This operation requires that the image
@@ -110,122 +111,97 @@ function drawImage(ctx: CanvasRenderingContext2D | DebugCanvasContext, image: Im
   }
 }
 
-/**
- * @param {CanvasContext} ctx
- * @param {String} text The text string to render
- * @param {Number} x The x-coordinate to begin drawing
- * @param {Number} y The y-coordinate to begin drawing
- * @param {Number} width The maximum allowed width
- * @param {Number} height The maximum allowed height
- * @param {FontFace} fontFace The FontFace to to use
- * @param {Object} options Available options are:
- *   {Number} fontSize
- *   {Number} lineHeight
- *   {String} textAlign
- *   {String} color
- *   {String} backgroundColor
- */
-function drawText(ctx, text, x, y, width, height, fontFace, _options, layer) {
-  let currX = x
-  let currY = y
-  let currText
-  const options = _options || {}
+interface TextOption {
+  fontSize: number;
+  lineHeight: number;
+  textAlign: string;
+  color: string;
+  backgroundColor: string;
+};
 
-  options.fontSize = options.fontSize || 16
-  options.lineHeight = options.lineHeight || 18
-  options.textAlign = options.textAlign || 'left'
-  options.backgroundColor = options.backgroundColor || 'transparent'
-  options.color = options.color || '#000'
+function drawText(
+  ctx: CanvasRenderingContext2D | DebugCanvasContext,
+  text: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  fontFace: FontCacheValue,
+  _options: Partial<TextOption>,
+  layer: TextRenderLayer,
+) {
+  let currX = x;
+  let currY = y;
+  let currText;
+  const options: TextOption = {
+    fontSize: _options.fontSize || 16,
+    lineHeight: _options.lineHeight || 18,
+    textAlign: _options.textAlign || 'left',
+    backgroundColor: _options.backgroundColor || 'transparent',
+    color: _options.color || '#000',
+  };
 
-  if (ctx instanceof DebugCanvasContext) {
+
+  if (ctx instanceof DebugCanvasContext && layer.containerInfo) {
     layer.containerInfo.innerText = layer.text;
     layer.containerInfo.style.fontFamily = fontFace.family;
     layer.containerInfo.style.lineHeight = `${options.lineHeight}px`;
     layer.containerInfo.style.backgroundColor = options.backgroundColor;
     layer.containerInfo.style.color = options.color;
     layer.containerInfo.style.fontSize = `${options.fontSize}px`;
+  } else {
+    const textMetrics = measureText(
+      text,
+      width,
+      fontFace,
+      options.fontSize,
+      options.lineHeight,
+    );
 
-    return;
+    ctx.save();
+
+    // Draw the background
+    if (options.backgroundColor !== 'transparent') {
+      ctx.fillStyle = options.backgroundColor;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = options.color;
+    ctx.font = `${fontFace.attributes.style} normal ${
+      fontFace.attributes.weight
+    } ${options.fontSize}px ${fontFace.family}`;
+
+    textMetrics.lines.forEach((line, index) => {
+      currText = line.text;
+      currY = y + options.lineHeight * index + options.lineHeight / 2;
+
+      // Account for text-align: left|right|center
+      switch (options.textAlign) {
+        case 'center':
+          currX = x + width / 2 - line.width / 2;
+          break
+        case 'right':
+          currX = x + width - line.width;
+          break
+        default:
+          currX = x;
+      }
+
+      if (
+        index < textMetrics.lines.length - 1 &&
+        options.lineHeight + options.lineHeight * (index + 1) > height
+      ) {
+        currText = currText.replace(/,?\s?\w+$/, '...');
+      }
+
+      if (currY <= height + y) {
+        ctx.fillText(currText, currX, currY);
+      }
+    })
+
+    ctx.restore();
   }
-
-  const textMetrics = measureText(
-    text,
-    width,
-    fontFace,
-    options.fontSize,
-    options.lineHeight
-  )
-
-  ctx.save()
-
-  // Draw the background
-  if (options.backgroundColor !== 'transparent') {
-    ctx.fillStyle = options.backgroundColor
-    ctx.fillRect(0, 0, width, height)
-  }
-
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = options.color
-  ctx.font = `${fontFace.attributes.style} normal ${
-    fontFace.attributes.weight
-  } ${options.fontSize}px ${fontFace.family}`
-
-  textMetrics.lines.forEach((line, index) => {
-    currText = line.text
-    currY = y + options.lineHeight * index + options.lineHeight / 2;
-
-    // Account for text-align: left|right|center
-    switch (options.textAlign) {
-      case 'center':
-        currX = x + width / 2 - line.width / 2
-        break
-      case 'right':
-        currX = x + width - line.width
-        break
-      default:
-        currX = x
-    }
-
-    if (
-      index < textMetrics.lines.length - 1 &&
-      options.lineHeight + options.lineHeight * (index + 1) > height
-    ) {
-      currText = currText.replace(/,?\s?\w+$/, '…')
-    }
-
-    if (currY <= height + y) {
-      ctx.fillText(currText, currX, currY)
-    }
-  })
-
-  ctx.restore()
 }
 
-/**
- * Draw a linear gradient
- *
- * @param {CanvasContext} ctx
- * @param {Number} x1 gradient start-x coordinate
- * @param {Number} y1 gradient start-y coordinate
- * @param {Number} x2 gradient end-x coordinate
- * @param {Number} y2 gradient end-y coordinate
- * @param {Array} colorStops Array of {(String)color, (Number)position} values
- * @param {Number} x x-coordinate to begin fill
- * @param {Number} y y-coordinate to begin fill
- * @param {Number} width how wide to fill
- * @param {Number} height how tall to fill
- */
-function drawGradient(ctx, x1, y1, x2, y2, colorStops, x, y, width, height) {
-  ctx.save()
-  const grad = ctx.createLinearGradient(x1, y1, x2, y2)
-
-  colorStops.forEach(colorStop => {
-    grad.addColorStop(colorStop.position, colorStop.color)
-  })
-
-  ctx.fillStyle = grad
-  ctx.fillRect(x, y, width, height)
-  ctx.restore()
-}
-
-export { drawImage, drawText, drawGradient }
+export { drawImage, drawText };

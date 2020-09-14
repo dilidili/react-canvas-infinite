@@ -1,5 +1,5 @@
 import ImageCache from './ImageCache';
-import { isFontLoaded } from './FontUtils'
+import { isFontLoaded } from './FontUtils';
 import FontFace from './FontFace'
 import { drawGradient, drawText, drawImage } from './CanvasUtils'
 import Canvas from './Canvas'
@@ -252,15 +252,12 @@ function drawImageRenderLayer(ctx: CanvasRenderingContext2D, layer: ImageRenderL
   );
 }
 
-/**
- * @private
- */
 function drawTextRenderLayer(ctx: CanvasRenderingContext2D, layer: TextRenderLayer) {
   drawBaseRenderLayer(ctx, layer);
 
   // Don't draw text until loaded
-  if (!isFontLoaded(fontFace)) {
-    return
+  if (!isFontLoaded(layer.fontFace)) {
+    return;
   }
 
   drawText(
