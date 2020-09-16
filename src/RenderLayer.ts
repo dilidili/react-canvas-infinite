@@ -1,8 +1,9 @@
-import { zero } from './FrameUtils'
-import { invalidateBackingStore } from './DrawingUtils'
+import { zero } from './FrameUtils';
+import { invalidateBackingStore } from './DrawingUtils';
 import { Frame } from './FrameUtils';
 import { FontFace } from './FontFace';
-import * as EventTypes from './EventTypes'
+import EventTypes from './EventTypes';
+import CanvasComponent from './CanvasComponent';
 
 type LayerType = 'image' | 'text';
 
@@ -14,9 +15,10 @@ class RenderLayer {
 
   type: LayerType;
   frame: Frame;
-  backingStoreId?: string;
+  backingStoreId?: number;
   containerInfo?: HTMLDivElement;
 
+  // traverse layer tree
   parentLayer?: RenderLayer;
   children: RenderLayer[] = [];
 
@@ -29,6 +31,9 @@ class RenderLayer {
   shadowColor?: string;
   shadowOffsetX?: number;
   shadowOffsetY?: number;
+  zIndex?: number;
+
+  [key: string]: any;
 
   /**
    * Resets all the state on this RenderLayer so it can be added to a pool for re-use.
@@ -38,12 +43,13 @@ class RenderLayer {
       invalidateBackingStore(this.backingStoreId);
     }
 
-    for (const key in this) {
+    for (const key in (this as RenderLayer)) {
       if (key === 'children' || key === 'frame') continue;
       const value = this[key];
 
       if (typeof value === 'function') continue;
-      this[key] = null;
+
+      this[key] = undefined;
     }
 
     if (this.children) {
@@ -62,55 +68,48 @@ class RenderLayer {
 
   /**
    * Retrieve the root injection layer
-   *
-   * @return {RenderLayer}
    */
   getRootLayer() {
-    let root = this
+    let root: RenderLayer = this;
+
     while (root.parentLayer) {
-      root = root.parentLayer
+      root = root.parentLayer;
     }
-    return root
-  },
+
+    return root;
+  }
 
   /**
    * RenderLayers are injected into a root owner layer whenever a Surface is
    * mounted. This is the integration point with React internals.
-   *
-   * @param {RenderLayer} parentLayer
    */
-  inject(parentLayer) {
+  inject(parentLayer: RenderLayer) {
     if (this.parentLayer && this.parentLayer !== parentLayer) {
-      this.remove()
+      this.remove();
     }
-    if (!this.parentLayer) {
-      parentLayer.addChild(this)
-    }
-  },
+
+    parentLayer.addChild(this);
+    this.parentLayer = parentLayer;
+  }
 
   /**
    * Inject a layer before a reference layer
-   *
-   * @param {RenderLayer} parentLayer
-   * @param {RenderLayer} referenceLayer
    */
-  injectBefore(parentLayer, beforeLayer) {
-    this.remove()
-    const beforeIndex = parentLayer.children.indexOf(beforeLayer)
-    parentLayer.children.splice(beforeIndex, 0, this)
-    this.parentLayer = parentLayer
-    this.zIndex = this.zIndex || beforeLayer.zIndex || 0
-  },
+  injectBefore(parentLayer: RenderLayer, beforeLayer: RenderLayer) {
+    this.remove();
+    const beforeIndex = parentLayer.children.indexOf(beforeLayer);
+    parentLayer.children.splice(beforeIndex, 0, this);
+    this.parentLayer = parentLayer;
+    this.zIndex = this.zIndex || beforeLayer.zIndex || 0;
+  }
 
   /**
    * Add a child to the render layer
-   *
-   * @param {RenderLayer} child
    */
-  addChild(child) {
-    child.parentLayer = this
-    this.children.push(child)
-  },
+  addChild(child: RenderLayer) {
+    child.parentLayer = this;
+    this.children.push(child);
+  }
 
   /**
    * Remove a layer from it's parent layer
@@ -119,12 +118,12 @@ class RenderLayer {
     if (this.parentLayer) {
       this.parentLayer.children.splice(
         this.parentLayer.children.indexOf(this),
-        1
+        1,
       )
 
-      this.parentLayer = null
+      this.parentLayer = undefined;
     }
-  },
+  }
 
   /**
    * Move a layer to top.
@@ -138,53 +137,36 @@ class RenderLayer {
       this.parentLayer.children.splice(
         this.parentLayer.children.indexOf(this),
         1
-      )
+      );
 
-      this.parentLayer.children.unshift(this)
+      this.parentLayer.children.unshift(this);
     }
-  },
+  }
 
   /**
    * Attach an event listener to a layer. Supported events are defined in
    * lib/EventTypes.js
-   *
-   * @param {String} type
-   * @param {Function} callback
-   * @param {?Object} callbackScope
-   * @return {Function} invoke to unsubscribe the listener
    */
-  subscribe(type, callback, callbackScope) {
+  subscribe(type: keyof typeof EventTypes, callback: Function, callbackScope: CanvasComponent) {
     // This is the integration point with React, called from LayerMixin.putEventListener().
     // Enforce that only a single callbcak can be assigned per event type.
-    for (const eventType in EventTypes) {
-      if (EventTypes[eventType] === type) {
-        this[eventType] = callback
-      }
-    }
+    this[type] = callback;
 
     // Return a function that can be called to unsubscribe from the event.
-    return this.removeEventListener.bind(this, type, callback, callbackScope)
-  },
+    return this.removeEventListener.bind(this, type, callback, callbackScope);
+  }
 
-  /**
-   * @param {String} type
-   */
   destroyEventListeners() {
     for (const eventType in EventTypes) {
       if (this[eventType]) {
-        delete this[eventType]
+        delete this[eventType];
       }
     }
-  },
+  }
 
-  /**
-   * @param {String} type
-   * @param {Function} callback
-   * @param {?Object} callbackScope
-   */
   removeEventListener(type, callback, callbackScope) {
-    const listeners = this.eventListeners[type]
-    let listener
+    const listeners = this.eventListeners[type];
+    let listener;
     if (listeners) {
       for (let index = 0, len = listeners.length; index < len; index++) {
         listener = listeners[index]

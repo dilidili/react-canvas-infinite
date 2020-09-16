@@ -1,41 +1,54 @@
-import RenderLayer from './RenderLayer'
-import { make } from './FrameUtils'
-import * as EventTypes from './EventTypes'
-import { emptyObject } from './utils'
+import RenderLayer from './RenderLayer';
+import { make } from './FrameUtils';
+import { emptyObject } from './utils';
 import clamp from './clamp';
+import EventTypes from './EventTypes';
 
-let LAYER_GUID = 1
+let LAYER_GUID = 1;
+
+type BasicProps = {
+  useBackingStore?: boolean;
+  scrollable?: boolean;
+  [key: string]: any;
+} & Partial<keyof typeof EventTypes>;
 
 export default class CanvasComponent {
   constructor(type) {
-    this.type = type
-    this.subscriptions = new Map()
-    this.listeners = new Map()
-    this.node = new RenderLayer(this)
-    this._layerId = LAYER_GUID
-    LAYER_GUID += 1
+    this.type = type;
+    this.subscriptions = new Map();
+    this.listeners = new Map();
+    this.node = new RenderLayer(this);
+
+    this._layerId = LAYER_GUID;
+    LAYER_GUID += 1;
   }
 
-  putEventListener = (type, listener) => {
-    const { listeners, subscriptions } = this
+  _layerId: number;
+  type: string;
+  node: RenderLayer;
 
-    let isListenerDifferent = false
+  applyLayerProps?: Function;
+
+  putEventListener = (type: string, listener: Function) => {
+    const { listeners, subscriptions } = this;
+
+    let isListenerDifferent = false;
     if (listeners.get(type) !== listener) {
-      listeners.set(type, listener)
-      isListenerDifferent = true
+      listeners.set(type, listener);
+      isListenerDifferent = true;
     }
 
     if (listener) {
       // Add subscription if this is the first listener of the given type
       // or the new listener is different from the current listener.
       if (!subscriptions.has(type) || isListenerDifferent) {
-        subscriptions.set(type, this.node.subscribe(type, listener, this))
+        subscriptions.set(type, this.node.subscribe(type, listener, this));
       }
     } else {
-      const subscription = subscriptions.get(type)
+      const subscription = subscriptions.get(type);
       if (subscription) {
-        subscription()
-        subscriptions.delete(type)
+        subscription();
+        subscriptions.delete(type);
       }
     }
   }
@@ -115,26 +128,27 @@ export default class CanvasComponent {
       layer.shadowOffsetY = style.shadowOffsetY
   }
 
-  applyCommonLayerProps = (prevProps, props) => {
-    const layer = this.node
+  applyCommonLayerProps = (prevProps: P, props: P) => {
+    const layer = this.node;
 
     // Generate backing store ID as needed.
     if ((props.useBackingStore || props.scrollable) && layer.backingStoreId !== this._layerId) {
       layer.backingStoreId = this._layerId;
       layer.scrollable = !!props.scrollable;
     } else if (!(props.useBackingStore || props.scrollable) && layer.backingStoreId) {
-      layer.backingStoreId = null
+      layer.backingStoreId = undefined;
       layer.scrollable = false;
     }
 
-    // Register events
-    for (const type in EventTypes) {
+    // Register events.
+    let type: keyof typeof EventTypes;
+    for (type in EventTypes) {
       if (prevProps[type] !== props[type]) {
-        this.putEventListener(EventTypes[type], props[type])
+        this.putEventListener(EventTypes[type], props[type]);
       }
     }
 
-    this.setStyleFromProps(layer, props)
+    this.setStyleFromProps(layer, props);
   }
 
   getLayer = () => this.node

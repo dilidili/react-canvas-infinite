@@ -8,18 +8,6 @@ import { FontCacheValue } from './FontFace';
 /**
  * Draw an image into a <canvas>. This operation requires that the image
  * already be loaded.
- *
- * @param {CanvasContext} ctx
- * @param {Image} image The source image (from ImageCache.get())
- * @param {Number} x The x-coordinate to begin drawing
- * @param {Number} y The y-coordinate to begin drawing
- * @param {Number} width The desired width
- * @param {Number} height The desired height
- * @param {Object} options Available options are:
- *   {Number} originalWidth
- *   {Number} originalHeight
- *   {Object} focusPoint {x,y}
- *   {String} backgroundColor
  */
 function drawImage(ctx: CanvasRenderingContext2D | DebugCanvasContext, image: Img, layer: ImageRenderLayer, options?: {
   originalHeight?: number,

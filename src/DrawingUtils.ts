@@ -8,7 +8,7 @@ import RenderLayer, { ImageRenderLayer, TextRenderLayer } from './RenderLayer';
 
 // Global backing store <canvas> cache
 let _backingStores: ({
-  id: string;
+  id: number;
   canvas: HTMLCanvasElement,
 })[] = [];
 
@@ -16,7 +16,7 @@ let _backingStores: ({
  * Maintain a cache of backing <canvas> for RenderLayer's which are accessible
  * through the RenderLayer's `backingStoreId` property.
  */
-function getBackingStore(id: string) {
+function getBackingStore(id: number) {
   for (let i = 0, len = _backingStores.length; i < len; i++) {
     if (_backingStores[i].id === id) {
       return _backingStores[i].canvas;
@@ -29,7 +29,7 @@ function getBackingStore(id: string) {
 /**
  * Purge a layer's backing store from the cache.
  */
-function invalidateBackingStore(id: string) {
+function invalidateBackingStore(id: number) {
   for (let i = 0, len = _backingStores.length; i < len; i++) {
     if (_backingStores[i].id === id) {
       _backingStores.splice(i, 1);
@@ -278,35 +278,9 @@ function drawTextRenderLayer(ctx: CanvasRenderingContext2D, layer: TextRenderLay
   )
 }
 
-/**
- * @private
- */
-function drawGradientRenderLayer(ctx, layer) {
-  drawBaseRenderLayer(ctx, layer)
-
-  // Default to linear gradient from top to bottom.
-  const x1 = layer.x1 || layer.frame.x
-  const y1 = layer.y1 || layer.frame.y
-  const x2 = layer.x2 || layer.frame.x
-  const y2 = layer.y2 || layer.frame.y + layer.frame.height
-  drawGradient(
-    ctx,
-    x1,
-    y1,
-    x2,
-    y2,
-    layer.colorStops,
-    layer.frame.x,
-    layer.frame.y,
-    layer.frame.width,
-    layer.frame.height
-  )
-}
-
 const layerTypesToDrawFunction = {
   image: drawImageRenderLayer,
   text: drawTextRenderLayer,
-  gradient: drawGradientRenderLayer,
   group: drawBaseRenderLayer
 }
 
@@ -468,8 +442,8 @@ drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer, drawFunction) 
       backingStore = new Canvas(
         layer.frame.width,
         layer.frame.height,
-        backingStoreScale
-      )
+        backingStoreScale,
+      );
       _backingStores.push({
         id: layer.backingStoreId,
         layer,

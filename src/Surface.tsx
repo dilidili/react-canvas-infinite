@@ -12,21 +12,24 @@ const scale = window.devicePixelRatio || 1;
 
 type SurfaceElement = HTMLCanvasElement | HTMLDivElement;
 type SurfaceProps = {
+  width?: number,
+  height?: number,
   enableDebug: boolean,
-} & React.CanvasHTMLAttributes<SurfaceElement>;
+} & Partial<React.CanvasHTMLAttributes<SurfaceElement>>;
 
 const Surface: React.FC<SurfaceProps> = ({
   enableDebug,
-  width,
-  height,
+  width = 0,
+  height = 0,
   children,
+  className,
   ...otherProps
 }) => {
-  const [canvasWidth, setCanvasWidth] = useState<number>(+width || 0);
-  const [canvasHeight, setCanvasHeight] = useState<number>(+height || 0);
+  const [canvasWidth, setCanvasWidth] = useState<number>(width);
+  const [canvasHeight, setCanvasHeight] = useState<number>(height);
 
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const nodeRef = useRef<any>(null);
+  const canvasRef = useRef<SurfaceElement>(null);
+  const nodeRef = useRef<RenderLayer | null>(null);
   const mountNodeRef = useRef<any>(null);
   const renderSchedulerRef = useRef<{
     _frameReady: boolean;
@@ -43,22 +46,21 @@ const Surface: React.FC<SurfaceProps> = ({
   };
 
   useEffect(() => {
-    let layerWidth = +width, layerHeight = +height;
+    let layerWidth = width, layerHeight = height;
 
     // Scale the drawing area to match DPI.
-    if (!layerWidth || !layerHeight) {
+    if ((!layerWidth || !layerHeight) && canvasRef.current) {
       const rect = canvasRef.current.getBoundingClientRect();
       layerWidth = rect.width;
       layerHeight = rect.height;
 
       setCanvasWidth(layerWidth * scale);
       setCanvasHeight(layerHeight * scale);
-      getContext().scale(scale, scale);
     }
+    getContext().scale(scale, scale);
 
     const frame = make(0, 0, layerWidth, layerHeight);
-    const node = nodeRef.current = new RenderLayer(frame);
-    node.draw = this.batchedTick;
+    nodeRef.current = new RenderLayer(frame);
 
     mountNodeRef.current = CanvasRenderer.createContainer();
     CanvasRenderer.updateContainer(children, mountNodeRef.current);
@@ -122,7 +124,7 @@ const Surface: React.FC<SurfaceProps> = ({
     }
   }
 
-  let style = undefined;
+  let style = otherProps.style;
   if (enableDebug) {
     style = { ...(otherProps.style || {}), position: 'relative', };
   }
@@ -146,39 +148,44 @@ const Surface: React.FC<SurfaceProps> = ({
   }, []);
 
 
-  const props = {
-    ref: this.setCanvasRef,
-    className: this.props.className,
-    id: this.props.id,
-    width,
-    height,
+  const resolveProps = {
+    className: className,
+    width: canvasWidth,
+    height: canvasHeight,
     style,
-    onTouchStart: this.handleTouchStart,
-    onTouchMove: this.handleTouchMove,
-    onTouchEnd: this.handleTouchEnd,
-    onTouchCancel: this.handleTouchEnd,
-    onMouseDown: this.handleMouseEvent,
-    onMouseUp: this.handleMouseEvent,
-    onMouseMove: this.handleMouseEvent,
-    onMouseOver: this.handleMouseEvent,
-    onMouseOut: this.handleMouseEvent,
-    onContextMenu: this.handleContextMenu,
-    onClick: this.handleMouseEvent,
-    onDoubleClick: this.handleMouseEvent,
-    onWheel: this.handleScroll,
+    // onTouchStart: this.handleTouchStart,
+    // onTouchMove: this.handleTouchMove,
+    // onTouchEnd: this.handleTouchEnd,
+    // onTouchCancel: this.handleTouchEnd,
+    // onMouseDown: this.handleMouseEvent,
+    // onMouseUp: this.handleMouseEvent,
+    // onMouseMove: this.handleMouseEvent,
+    // onMouseOver: this.handleMouseEvent,
+    // onMouseOut: this.handleMouseEvent,
+    // onContextMenu: this.handleContextMenu,
+    // onClick: this.handleMouseEvent,
+    // onDoubleClick: this.handleMouseEvent,
+    // onWheel: this.handleScroll,
   };
 
   if (!enableDebug) {
     return (
       <canvas 
-        ref={canvasRef}
-        width={canvasWidth}
-        height={canvasHeight}
-        {...otherProps}
+        ref={canvasRef as React.RefObject<HTMLCanvasElement>}
+        {...resolveProps}
+      />
+    );
+  } else {
+    return (
+      <div
+        ref={canvasRef as React.RefObject<HTMLDivElement>}
+        {...resolveProps}
       />
     );
   }
 };
+
+Surface.displayName = 'Surface';
 
 /**
  * Surface is a standard React component and acts as the main drawing canvas.
