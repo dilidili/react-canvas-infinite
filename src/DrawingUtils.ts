@@ -9,7 +9,8 @@ import RenderLayer, { ImageRenderLayer, TextRenderLayer } from './RenderLayer';
 // Global backing store <canvas> cache
 let _backingStores: ({
   id: number;
-  canvas: HTMLCanvasElement,
+  layer: RenderLayer;
+  canvas: Canvas;
 })[] = [];
 
 /**
@@ -278,17 +279,18 @@ function drawTextRenderLayer(ctx: CanvasRenderingContext2D, layer: TextRenderLay
   )
 }
 
-const layerTypesToDrawFunction = {
+type DrawFunction = (ctx: CanvasRenderingContext2D, layer: RenderLayer) => void;
+
+const layerTypesToDrawFunction: {
+  [key: string]: DrawFunction,
+} = {
   image: drawImageRenderLayer,
   text: drawTextRenderLayer,
-  group: drawBaseRenderLayer
+  group: drawBaseRenderLayer,
 }
 
-function getDrawFunction(type) {
-  // eslint-disable-next-line no-prototype-builtins
-  return layerTypesToDrawFunction.hasOwnProperty(type)
-    ? layerTypesToDrawFunction[type]
-    : drawBaseRenderLayer
+function getDrawFunction(type: string): DrawFunction {
+  return layerTypesToDrawFunction[type] || drawBaseRenderLayer;
 }
 
 function registerLayerType(type, drawFunction) {
@@ -309,7 +311,6 @@ function sortByZIndexAscending(layerA, layerB) {
 
 let drawCacheableRenderLayer = null
 // eslint-disable-next-line import/no-mutable-exports
-let drawRenderLayer = null
 
 function drawChildren(layer, ctx, start, end) {
   const { children } = layer
@@ -346,17 +347,14 @@ function drawChildren(layer, ctx, start, end) {
 
 /**
  * Draw a RenderLayer instance to a <canvas> context.
- *
- * @param {CanvasRenderingContext2d} ctx
- * @param {RenderLayer} layer
  */
-drawRenderLayer = (ctx, layer) => {
-  const drawFunction = getDrawFunction(layer.type)
+const drawRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLayer) => {
+  const drawFunction = getDrawFunction(layer.type);
   const isDebug = ctx instanceof DebugCanvasContext;
 
   // Performance: avoid drawing hidden layers.
   if (typeof layer.alpha === 'number' && layer.alpha <= 0) {
-    return
+    return;
   }
 
   // Establish drawing context for certain properties:
@@ -364,42 +362,40 @@ drawRenderLayer = (ctx, layer) => {
   // - translate
   const saveContext =
     (layer.alpha !== null && layer.alpha < 1) ||
-    (layer.translateX || layer.translateY)
+    (layer.translateX || layer.translateY);
 
   if (saveContext) {
-    ctx.save()
+    ctx.save();
 
     // Alpha:
     if (layer.alpha !== null && layer.alpha < 1) {
-      ctx.globalAlpha = layer.alpha
+      ctx.globalAlpha = layer.alpha;
     }
 
     // Translation:
     if (layer.translateX || layer.translateY) {
-      ctx.translate(layer.translateX || 0, layer.translateY || 0)
+      ctx.translate(layer.translateX || 0, layer.translateY || 0);
     }
   }
 
   // If the layer is bitmap-cacheable, draw in a pooled off-screen canvas.
   // We disable backing stores on pad since we flip there.
   if (layer.backingStoreId && !isDebug) {
-    drawCacheableRenderLayer(ctx, layer, drawFunction)
+    drawCacheableRenderLayer(ctx, layer, drawFunction);
   } else {
-    ctx.save()
-    // Draw
-    // eslint-disable-next-line no-unused-expressions
-    drawFunction && drawFunction(ctx, layer)
-    ctx.restore()
+    ctx.save();
+    drawFunction(ctx, layer);
+    ctx.restore();
 
     // Draw child layers, sorted by their z-index.
     if (layer.children) {
-      drawChildren(layer, ctx)
+      drawChildren(layer, ctx);
     }
   }
 
   // Pop the context state if we established a new drawing context.
   if (saveContext) {
-    ctx.restore()
+    ctx.restore();
   }
 }
 
@@ -407,36 +403,30 @@ drawRenderLayer = (ctx, layer) => {
  * Draw a bitmap-cacheable layer into a pooled <canvas>. The result will be
  * drawn into the given context. This will populate the layer backing store
  * cache with the result.
- *
- * @param {CanvasRenderingContext2d} ctx
- * @param {RenderLayer} layer
- * @param {Function} drawFunction
- * @private
  */
-drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer, drawFunction) => {
+drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLayer, drawFunction: DrawFunction) => {
+  if (!layer.backingStoreId) return;
+
   // See if there is a pre-drawn canvas in the pool.
-  let backingStore = getBackingStore(layer.backingStoreId)
-  const backingStoreScale = layer.scale || window.devicePixelRatio
-  const frameOffsetY = layer.frame.y + (layer.bufferOffset || 0);
+  let backingStore = getBackingStore(layer.backingStoreId);
+  const backingStoreScale = layer.scale || window.devicePixelRatio;
+  const frameOffsetY = layer.frame.y;
   const frameOffsetX = layer.frame.x;
-  let backingContext
+  let backingContext;
 
   const shouldRedraw = !backingStore || !!layer.scrollable;
   if (!backingStore) {
     if (_backingStores.length >= Canvas.poolSize) {
       // Re-use the oldest backing store once we reach the pooling limit.
-      backingStore = _backingStores[0].canvas
-      Canvas.call(
-        backingStore,
-        layer.frame.width,
-        layer.frame.height,
-        backingStoreScale
-      )
+      backingStore = _backingStores[0].canvas;
+      backingStore.reset(layer.frame.width, layer.frame.height, backingStoreScale);
 
       // Move the re-use canvas to the front of the queue.
-      _backingStores[0].id = layer.backingStoreId
-      _backingStores[0].canvas = backingStore
-      _backingStores.push(_backingStores.shift())
+      _backingStores[0].id = layer.backingStoreId;
+      _backingStores[0].canvas = backingStore;
+
+      const shift = _backingStores.shift();
+      shift && _backingStores.push(shift);
     } else {
       // Create a new backing store, we haven't yet reached the pooling limit
       backingStore = new Canvas(
@@ -444,6 +434,7 @@ drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer, drawFunction) 
         layer.frame.height,
         backingStoreScale,
       );
+
       _backingStores.push({
         id: layer.backingStoreId,
         layer,
@@ -455,45 +446,48 @@ drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer, drawFunction) 
   if (shouldRedraw) {
     // Draw into the backing <canvas> at (0, 0) - we will later use the
     // <canvas> to draw the layer as an image at the proper coordinates.
-    backingContext = backingStore.getContext('2d')
-    backingContext.clearRect(0, 0, layer.frame.width, layer.frame.height);
+    backingContext = backingStore.getContext();
 
-    let startIndex, endIndex;
+    if (backingContext) {
+      backingContext.clearRect(0, 0, layer.frame.width, layer.frame.height);
 
-    layer.translate(-frameOffsetX, -frameOffsetY, startIndex, endIndex);
+      let startIndex: number | undefined, endIndex: number | undefined;
 
-    // Draw default properties, such as background color.
-    backingContext.save()
+      layer.translate(-frameOffsetX, -frameOffsetY, startIndex, endIndex);
 
-    // Custom drawing operations
-    // eslint-disable-next-line no-unused-expressions
-    drawFunction && drawFunction(backingContext, layer)
-    backingContext.restore()
+      // Draw default properties, such as background color.
+      backingContext.save();
 
-    // Draw child layers, sorted by their z-index.
-    if (layer.children) {
-      drawChildren(layer, backingContext, startIndex, endIndex);
+      // Custom drawing operations
+      // eslint-disable-next-line no-unused-expressions
+      drawFunction && drawFunction(backingContext, layer);
+      backingContext.restore();
+
+      // Draw child layers, sorted by their z-index.
+      if (layer.children) {
+        drawChildren(layer, backingContext, startIndex, endIndex);
+      }
+
+      // Restore layer's original frame.
+      layer.translate(frameOffsetX, frameOffsetY, startIndex, endIndex);
     }
-
-    // Restore layer's original frame.
-    layer.translate(frameOffsetX, frameOffsetY, startIndex, endIndex);
   }
 
   // We have the pre-rendered canvas ready, draw it into the destination canvas.
   if (layer.clipRect) {
     // Fill the clipping rect in the destination canvas.
-    const sx = (layer.clipRect.x - layer.frame.x) * backingStoreScale
-    const sy = (layer.clipRect.y - layer.frame.y) * backingStoreScale
-    const sw = layer.clipRect.width * backingStoreScale
-    const sh = layer.clipRect.height * backingStoreScale
-    const dx = layer.clipRect.x
-    const dy = layer.clipRect.y
-    const dw = layer.clipRect.width
-    const dh = layer.clipRect.height
+    const sx = (layer.clipRect.x - layer.frame.x) * backingStoreScale;
+    const sy = (layer.clipRect.y - layer.frame.y) * backingStoreScale;
+    const sw = layer.clipRect.width * backingStoreScale;
+    const sh = layer.clipRect.height * backingStoreScale;
+    const dx = layer.clipRect.x;
+    const dy = layer.clipRect.y;
+    const dw = layer.clipRect.width;
+    const dh = layer.clipRect.height;
 
     // No-op for zero size rects. iOS / Safari will throw an exception.
     if (sw > 0 && sh > 0) {
-      ctx.drawImage(backingStore.getRawCanvas(), sx, sy, sw, sh, dx, dy, dw, dh)
+      ctx.drawImage(backingStore.getRawCanvas(), sx, sy, sw, sh, dx, dy, dw, dh);
     }
   } else {
     // Fill the entire canvas

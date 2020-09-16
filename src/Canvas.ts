@@ -24,6 +24,12 @@ class Canvas {
     }
   }
 
+  reset(width: number, height: number, scale: number) {
+    this.width = width;
+    this.height = height;
+    this.scale = scale;
+  }
+
   private _canvas: HTMLCanvasElement;
 
   getRawCanvas() {

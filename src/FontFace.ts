@@ -25,7 +25,7 @@ function getCacheKey(family: string, attributes?: FontAttribute, url?: string): 
 
 export class FontFace {
   // Helper for retrieving the default family by weight.
-  static Default = (fontWeight: number) => {
+  static Default = (fontWeight?: number) => {
     return new FontFace('sans-serif', { weight: fontWeight });
   }
 

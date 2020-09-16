@@ -8,8 +8,8 @@ import CanvasComponent from './CanvasComponent';
 type LayerType = 'image' | 'text';
 
 class RenderLayer {
-  constructor(frame: Frame) {
-    this.frame = frame;
+  constructor(frame?: Frame) {
+    this.frame = frame || zero();
     this.reset();
   }
 
@@ -32,6 +32,11 @@ class RenderLayer {
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   zIndex?: number;
+
+  scrollable?: boolean;
+
+  _originalStyle: React.CSSProperties;
+
 
   [key: string]: any;
 
@@ -147,7 +152,7 @@ class RenderLayer {
    * Attach an event listener to a layer. Supported events are defined in
    * lib/EventTypes.js
    */
-  subscribe(type: keyof typeof EventTypes, callback: Function, callbackScope: CanvasComponent) {
+  subscribe(type: keyof typeof EventTypes, callback: Function, callbackScope: CanvasComponent): Function {
     // This is the integration point with React, called from LayerMixin.putEventListener().
     // Enforce that only a single callbcak can be assigned per event type.
     this[type] = callback;
@@ -183,11 +188,8 @@ class RenderLayer {
 
   /**
    * Translate a layer's frame
-   *
-   * @param {Number} x
-   * @param {Number} y
    */
-  translate(x, y, start, end) {
+  translate(x: number, y: number, start?: number, end?: number) {
     if (this.frame) {
       this.frame.x += x
       this.frame.y += y

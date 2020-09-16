@@ -1,20 +1,20 @@
 import CanvasComponent from './CanvasComponent'
 
-const LAYER_TYPE = 'group'
+const LAYER_TYPE = 'group';
 
 class Group extends CanvasComponent {
   applyLayerProps = (prevProps, props) => {
-    const layer = this.node
+    const layer = this.node;
 
     if (layer.type !== LAYER_TYPE) {
       layer.type = LAYER_TYPE
     }
 
-    this.applyCommonLayerProps(prevProps, props)
+    this.applyCommonLayerProps(prevProps, props);
   }
 
   render() {
-    return []
+    return [];
   }
 }
 

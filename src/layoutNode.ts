@@ -1,16 +1,29 @@
 import computeLayout from 'css-layout';
 import { emptyObject } from './utils';
 import FontFace from './FontFace';
+import RenderLayer from './RenderLayer';
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 
-function createNode(layer) {
+interface LayoutNode {
+  layer: RenderLayer,
+  layout: {
+    width: number,
+    height: number,
+    top: 0,
+    left: 0,
+  },
+  style: React.CSSProperties,
+  children: LayoutNode[],
+};
+
+function createNode(layer: RenderLayer): LayoutNode {
   return {
     layer,
     layout: {
-      width: undefined, // computeLayout will mutate
-      height: undefined, // computeLayout will mutate
+      width: 0, // computeLayout will mutate
+      height: 0, // computeLayout will mutate
       top: 0,
       left: 0
     },
@@ -32,7 +45,7 @@ function walkNode(node, parentLeft, parentTop) {
   }
 }
 
-function preWalkNode(node) {
+function preWalkNode(node: LayoutNode) {
   const layer = node.layer;
 
   if (layer.type === 'text') {
@@ -58,16 +71,14 @@ function preWalkNode(node) {
 /**
  * This computes the CSS layout for a RenderLayer tree and mutates the frame
  * objects at each node.
- *
- * @param {Renderlayer} root
- * @return {Object}
  */
-function layoutNode(root) {
-  const rootNode = createNode(root)
+function layoutNode(root: RenderLayer) {
+  const rootNode = createNode(root);
+
   preWalkNode(rootNode);
-  computeLayout(rootNode)
-  walkNode(rootNode)
-  return rootNode
+  computeLayout(rootNode);
+  walkNode(rootNode);
+  return rootNode;
 }
 
-export default layoutNode
+export default layoutNode;

@@ -14,7 +14,7 @@ type SurfaceElement = HTMLCanvasElement | HTMLDivElement;
 type SurfaceProps = {
   width?: number,
   height?: number,
-  enableDebug: boolean,
+  enableDebug?: boolean,
 } & Partial<React.CanvasHTMLAttributes<SurfaceElement>>;
 
 const Surface: React.FC<SurfaceProps> = ({
@@ -62,8 +62,8 @@ const Surface: React.FC<SurfaceProps> = ({
     const frame = make(0, 0, layerWidth, layerHeight);
     nodeRef.current = new RenderLayer(frame);
 
-    mountNodeRef.current = CanvasRenderer.createContainer();
-    CanvasRenderer.updateContainer(children, mountNodeRef.current);
+    mountNodeRef.current = CanvasRenderer.createContainer(null, false, false);
+    CanvasRenderer.updateContainer(children, mountNodeRef.current, undefined, () => {});
 
     // Execute initial draw on mount.
     batchedTick();
@@ -82,7 +82,7 @@ const Surface: React.FC<SurfaceProps> = ({
     tick(recomputeLayout);
   }
 
-  const tick = (recomputeLayout) => {
+  const tick = (recomputeLayout: boolean) => {
     const renderScheduler = renderSchedulerRef.current;
 
     // Block updates until next animation frame.
@@ -111,15 +111,17 @@ const Surface: React.FC<SurfaceProps> = ({
   }
 
   const draw = (recomputeLayout = true) => {
-    if (this.node) {
+    if (nodeRef.current) {
+      const node = nodeRef.current;
+
       if (recomputeLayout) {
-        layoutNode(this.node);
+        layoutNode(node);
       }
 
-      drawRenderLayer(this.getContext(), this.node);
+      drawRenderLayer(getContext(), node);
 
-      if (this.props.enableDebug) {
-        this.canvas.appendChild(this.node.containerInfo);
+      if (enableDebug && canvasRef.current && nodeRef.current.containerInfo) {
+        canvasRef.current.appendChild(nodeRef.current.containerInfo);
       }
     }
   }

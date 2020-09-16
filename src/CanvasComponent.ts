@@ -4,32 +4,35 @@ import { emptyObject } from './utils';
 import clamp from './clamp';
 import EventTypes from './EventTypes';
 
-let LAYER_GUID = 1;
+let COMPONENT_GUID = 1;
 
-type BasicProps = {
+type CanvasComponentProps = {
   useBackingStore?: boolean;
   scrollable?: boolean;
-  [key: string]: any;
-} & Partial<keyof typeof EventTypes>;
+} & {
+  [k in keyof typeof EventTypes]?: Function;
+};
 
-export default class CanvasComponent {
-  constructor(type) {
+export default abstract class CanvasComponent {
+  constructor(type: string) {
     this.type = type;
     this.subscriptions = new Map();
     this.listeners = new Map();
-    this.node = new RenderLayer(this);
+    this.node = new RenderLayer();
 
-    this._layerId = LAYER_GUID;
-    LAYER_GUID += 1;
+    this._comopnentId = COMPONENT_GUID;
+    COMPONENT_GUID += 1;
   }
 
-  _layerId: number;
+  _comopnentId: number;
   type: string;
   node: RenderLayer;
+  subscriptions: Map<string, Function>;
+  listeners: Map<string, Function>;
 
-  applyLayerProps?: Function;
+  abstract applyLayerProps: Function;
 
-  putEventListener = (type: string, listener: Function) => {
+  putEventListener = (type: keyof typeof EventTypes, listener: Function) => {
     const { listeners, subscriptions } = this;
 
     let isListenerDifferent = false;
@@ -54,9 +57,9 @@ export default class CanvasComponent {
   }
 
   destroyEventListeners = () => {
-    this.listeners.clear()
-    this.subscriptions.clear()
-    this.node.destroyEventListeners()
+    this.listeners.clear();
+    this.subscriptions.clear();
+    this.node.destroyEventListeners();
   }
 
   setStyleFromProps = (layer, props) => {
@@ -128,12 +131,12 @@ export default class CanvasComponent {
       layer.shadowOffsetY = style.shadowOffsetY
   }
 
-  applyCommonLayerProps = (prevProps: P, props: P) => {
+  applyCommonLayerProps = (prevProps: CanvasComponentProps, props: CanvasComponentProps) => {
     const layer = this.node;
 
     // Generate backing store ID as needed.
-    if ((props.useBackingStore || props.scrollable) && layer.backingStoreId !== this._layerId) {
-      layer.backingStoreId = this._layerId;
+    if ((props.useBackingStore || props.scrollable) && layer.backingStoreId !== this._comopnentId) {
+      layer.backingStoreId = this._comopnentId;
       layer.scrollable = !!props.scrollable;
     } else if (!(props.useBackingStore || props.scrollable) && layer.backingStoreId) {
       layer.backingStoreId = undefined;

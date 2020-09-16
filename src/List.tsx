@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import layoutNode from './layoutNode'
 import { Group } from './Core';
-import { make } from './FrameUtils'
+import { make } from './FrameUtils';
 import CanvasCromponent from './CanvasComponent';
 import { useForceUpdate } from './utils';
 import { Scroller } from 'scroller';
@@ -173,6 +173,7 @@ const List = (props) => {
   };
 
   var items = getVisibleItems();
+
   return (
     React.createElement(Group, {
       ref: containerRef,
