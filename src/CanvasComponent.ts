@@ -1,14 +1,31 @@
+import React from 'react';
 import RenderLayer from './RenderLayer';
 import { make } from './FrameUtils';
 import { emptyObject } from './utils';
-import clamp from './clamp';
 import EventTypes from './EventTypes';
 
 let COMPONENT_GUID = 1;
 
-type CanvasComponentProps = {
+export type CanvasStylePropperties = React.CSSProperties & {
+  alpha?: number;
+  borderWidth?: number;
+  borderRadius?: number;
+  translateX?: number;
+  translateY?: number;
+  zIndex?: number;
+  shadowBlur?: number;
+  shadowColor?: string;
+  shadowOffsetX?: number;
+  shadowOffsetY?: number;
+};
+
+
+export type CanvasComponentProps = {
   useBackingStore?: boolean;
   scrollable?: boolean;
+  style?: CanvasStylePropperties;
+  children?: React.ReactNode;
+  ref?: React.RefObject<any>;
 } & {
   [k in keyof typeof EventTypes]?: Function;
 };
@@ -18,21 +35,21 @@ export default abstract class CanvasComponent {
     this.type = type;
     this.subscriptions = new Map();
     this.listeners = new Map();
-    this.node = new RenderLayer();
 
     this._comopnentId = COMPONENT_GUID;
     COMPONENT_GUID += 1;
   }
 
+  abstract node: RenderLayer;
+
   _comopnentId: number;
   type: string;
-  node: RenderLayer;
-  subscriptions: Map<string, Function>;
-  listeners: Map<string, Function>;
+  subscriptions: Map<string, Function | undefined>;
+  listeners: Map<string, Function | undefined>;
 
-  abstract applyLayerProps: Function;
+  abstract applyLayerProps: (prevProps: CanvasComponentProps, props: CanvasComponentProps) => void;
 
-  putEventListener = (type: keyof typeof EventTypes, listener: Function) => {
+  putEventListener = (type: keyof typeof EventTypes, listener?: Function) => {
     const { listeners, subscriptions } = this;
 
     let isListenerDifferent = false;
@@ -62,73 +79,72 @@ export default abstract class CanvasComponent {
     this.node.destroyEventListeners();
   }
 
-  setStyleFromProps = (layer, props) => {
-    let style = emptyObject
+  setStyleFromProps = (layer: RenderLayer, props: CanvasComponentProps) => {
+    let style: CanvasStylePropperties = emptyObject;
 
     if (props.style) {
-      // eslint-disable-next-line prefer-destructuring
-      style = props.style
-      layer._originalStyle = style
+      style = props.style;
+      layer._originalStyle = style;
     } else {
-      layer._originalStyle = null
+      layer._originalStyle = undefined;
     }
 
     if (!layer.frame) {
-      layer.frame = make(0, 0, 0, 0)
+      layer.frame = make(0, 0, 0, 0);
     }
 
-    const { frame } = layer
-    const l = style.left || 0
-    const t = style.top || 0
-    const w = style.width || 0
-    const h = style.height || 0
+    const { frame } = layer;
+    const l = style.left || 0;
+    const t = style.top || 0;
+    const w = style.width || 0;
+    const h = style.height || 0;
 
-    if (frame.x !== l) frame.x = l
-    if (frame.y !== t) frame.y = t
-    if (frame.width !== w) frame.width = w
-    if (frame.height !== h) frame.height = h
+    if (frame.x !== l) frame.x = +l;
+    if (frame.y !== t) frame.y = +t;
+    if (frame.width !== w) frame.width = +w;
+    if (frame.height !== h) frame.height = +h;
 
     // Common layer properties
-    if (layer.alpha !== style.alpha) layer.alpha = style.alpha
+    if (layer.alpha !== style.alpha) layer.alpha = style.alpha;
 
-    if (layer.backgroundColor !== style.backgroundColor)
-      layer.backgroundColor = style.backgroundColor
+    if (layer.backgroundColor !== style.backgroundColor) {
+      layer.backgroundColor = style.backgroundColor;
+    }
 
-    if (layer.borderColor !== style.borderColor)
+    if (layer.borderColor !== style.borderColor) {
       layer.borderColor = style.borderColor
+    }
 
-    if (layer.borderWidth !== style.borderWidth)
-      layer.borderWidth = style.borderWidth
+    if (layer.borderWidth !== style.borderWidth) {
+      layer.borderWidth = style.borderWidth;
+    }
 
     if (layer.borderRadius !== style.borderRadius)
-      layer.borderRadius = style.borderRadius
-
-    if (layer.clipRect !== style.clipRect) layer.clipRect = style.clipRect
-
-    if (layer.scale !== style.scale) layer.scale = style.scale
+      layer.borderRadius = style.borderRadius;
 
     if (
       layer.translateX !== style.translateX ||
       layer.translateY !== style.translateY
     ) {
-      layer.translateX = style.translateX
-      layer.translateY = style.translateY
+      layer.translateX = style.translateX;
+      layer.translateY = style.translateY;
     }
 
-    if (layer.zIndex !== style.zIndex) layer.zIndex = style.zIndex
+    if (layer.zIndex !== style.zIndex) layer.zIndex = style.zIndex;
 
     // Shadow
-    if (layer.shadowColor !== style.shadowColor)
-      layer.shadowColor = style.shadowColor
-
-    if (layer.shadowBlur !== style.shadowBlur)
+    if (layer.shadowColor !== style.shadowColor) {
+      layer.shadowColor = style.shadowColor;
+    }
+    if (layer.shadowBlur !== style.shadowBlur) {
       layer.shadowBlur = style.shadowBlur
-
-    if (layer.shadowOffsetX !== style.shadowOffsetX)
+    }
+    if (layer.shadowOffsetX !== style.shadowOffsetX) {
       layer.shadowOffsetX = style.shadowOffsetX
-
-    if (layer.shadowOffsetY !== style.shadowOffsetY)
+    }
+    if (layer.shadowOffsetY !== style.shadowOffsetY) {
       layer.shadowOffsetY = style.shadowOffsetY
+    }
   }
 
   applyCommonLayerProps = (prevProps: CanvasComponentProps, props: CanvasComponentProps) => {
@@ -137,24 +153,24 @@ export default abstract class CanvasComponent {
     // Generate backing store ID as needed.
     if ((props.useBackingStore || props.scrollable) && layer.backingStoreId !== this._comopnentId) {
       layer.backingStoreId = this._comopnentId;
-      layer.scrollable = !!props.scrollable;
     } else if (!(props.useBackingStore || props.scrollable) && layer.backingStoreId) {
       layer.backingStoreId = undefined;
-      layer.scrollable = false;
     }
+
+    layer.scrollable = !!props.scrollable;
 
     // Register events.
     let type: keyof typeof EventTypes;
     for (type in EventTypes) {
       if (prevProps[type] !== props[type]) {
-        this.putEventListener(EventTypes[type], props[type]);
+        this.putEventListener(type, props[type]);
       }
     }
 
     this.setStyleFromProps(layer, props);
   }
 
-  getLayer = () => this.node
+  getLayer = () => this.node;
 
   /**
    * Resets all the state on this CanvasComponent so it can be added to a pool for re-use.
@@ -162,8 +178,7 @@ export default abstract class CanvasComponent {
    * @return {RenderLayer}
    */
   reset = () => {
-    this.destroyEventListeners()
-    this._originalStyle = null
-    this.node.reset(this)
+    this.destroyEventListeners();
+    this.node.reset();
   }
 }

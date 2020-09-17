@@ -1,5 +1,5 @@
 import Surface from './Surface';
-import { Group, Text, Layer, Gradient } from './Core';
+import { Text, Layer, Gradient, Group } from './Core';
 import Image from './Image';
 import List from './List.jsx';
 import FontFace from './FontFace';

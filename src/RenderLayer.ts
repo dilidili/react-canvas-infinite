@@ -3,20 +3,20 @@ import { invalidateBackingStore } from './DrawingUtils';
 import { Frame } from './FrameUtils';
 import { FontFace } from './FontFace';
 import EventTypes from './EventTypes';
-import CanvasComponent from './CanvasComponent';
+import CanvasComponent, { CanvasStylePropperties } from './CanvasComponent';
 
-type LayerType = 'image' | 'text';
+type LayerType = 'image' | 'text' | 'group';
 
 class RenderLayer {
   constructor(frame?: Frame) {
     this.frame = frame || zero();
     this.reset();
+    this.type = 'group';
   }
 
   type: LayerType;
   frame: Frame;
   backingStoreId?: number;
-  containerInfo?: HTMLDivElement;
 
   // traverse layer tree
   parentLayer?: RenderLayer;
@@ -32,13 +32,19 @@ class RenderLayer {
   shadowOffsetX?: number;
   shadowOffsetY?: number;
   zIndex?: number;
+  translateX?: number;
+  translateY?: number;
 
   scrollable?: boolean;
 
-  _originalStyle: React.CSSProperties;
+  _originalStyle?: CanvasStylePropperties;
 
+  [key: keyof typeof EventTypes]: Function;
 
   [key: string]: any;
+
+  // Debug
+  containerInfo?: HTMLDivElement;
 
   /**
    * Resets all the state on this RenderLayer so it can be added to a pool for re-use.
@@ -169,22 +175,22 @@ class RenderLayer {
     }
   }
 
-  removeEventListener(type, callback, callbackScope) {
+  removeEventListener(type: keyof typeof EventTypes, callback: Function, callbackScope: CanvasComponent) {
     const listeners = this.eventListeners[type];
     let listener;
     if (listeners) {
       for (let index = 0, len = listeners.length; index < len; index++) {
-        listener = listeners[index]
+        listener = listeners[index];
         if (
           listener.callback === callback &&
           listener.callbackScope === callbackScope
         ) {
-          listeners.splice(index, 1)
-          break
+          listeners.splice(index, 1);
+          break;
         }
       }
     }
-  },
+  }
 
   /**
    * Translate a layer's frame
@@ -211,7 +217,7 @@ class RenderLayer {
         });
       }
     }
-  },
+  }
 
   /**
    * Layers should call this method when they need to be redrawn. Note the
@@ -220,14 +226,11 @@ class RenderLayer {
    * component that is animating alpha level after the image loads would
    * call `invalidateBackingStore` once after the image loads, and at each
    * step in the animation would then call `invalidateRect`.
-   *
-   * @param {?Frame} frame Optional, if not passed the entire layer's frame
-   *   will be invalidated.
    */
   invalidateLayout(recomputeLayout = true) {
     // Bubble all the way to the root layer.
     this.getRootLayer().draw(recomputeLayout)
-  },
+  }
 
   /**
    * Layers should call this method when their backing <canvas> needs to be
@@ -238,34 +241,36 @@ class RenderLayer {
     if (this.backingStoreId) {
       invalidateBackingStore(this.backingStoreId)
     }
-    this.invalidateLayout()
-  },
+
+    this.invalidateLayout();
+  }
 
   /**
    * Only the root owning layer should implement this function.
    */
-  draw() {
+  draw(_ = true) {
     // Placeholer
   }
 }
 
 export class ImageRenderLayer extends RenderLayer {
-  constructor(frame: Frame, public imageUrl: string) {
+  constructor(frame?: Frame) {
     super(frame);
-
     this.type = 'image';
   }
+
+  imageUrl?: string;
 }
 
 export class TextRenderLayer extends RenderLayer {
-  constructor(frame: Frame, text: string, fontUrl?: string) {
+  constructor(frame: Frame, text: string, fontFace?: FontFace) {
     super(frame);
 
     this.type = 'text';
-    this.text = texta;
+    this.text = text;
 
     // Fallback to standard font.
-    this.fontFace = fontUrl ? new FontFace() : FontFace.Default();
+    this.fontFace = fontFace ? fontFace : FontFace.Default();
   }
 
   text: string;

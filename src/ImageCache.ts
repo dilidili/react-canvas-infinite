@@ -139,8 +139,6 @@ const _instancePool = new InstancePool();
 const ImageCache = {
   /**
    * Retrieve an image from the cache
-   *
-   * @return {Img}
    */
   get(src: string) {
     let image = _instancePool.get(src);
