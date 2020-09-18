@@ -12,8 +12,8 @@ declare global {
 const LAYER_TYPE = 'group';
 
 class Group extends CanvasComponent {
-  constructor(type: string) {
-    super(type);
+  constructor() {
+    super(LAYER_TYPE);
 
     this.node = new RenderLayer();
   }
