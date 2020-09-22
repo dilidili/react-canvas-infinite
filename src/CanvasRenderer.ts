@@ -17,12 +17,14 @@ import { getClosestInstanceFromNode } from './ReactDOMComponentTree';
 const UPDATE_SIGNAL = {};
 const MAX_POOLED_COMPONENTS_PER_TYPE = 1024;
 
+type CanvasComponentClass = typeof CanvasComponent;
+interface DerivedCanvas extends CanvasComponentClass {};
 const componentConstructors: {
-  [key: string]: typeof CanvasComponent,
+  [key: string]: DerivedCanvas,
 } = {
-  Text,
   Group,
-  RawImage
+  RawImage,
+  Text,
 }
 
 const componentPool: {
@@ -57,7 +59,7 @@ const freeComponentAndChildren = (c: CanvasComponent) => {
   freeComponentToPool(c);
 }
 
-const CanvasHostConfig: HostConfig<string, any, any, CanvasComponent, Text, any, any, Object, typeof UPDATE_SIGNAL, any, number, number> = {
+const CanvasHostConfig: HostConfig<string, any, CanvasComponent, CanvasComponent, Text, any, any, Object, typeof UPDATE_SIGNAL, any, number, number> = {
   getPublicInstance(instance) {
     return instance;
   },
@@ -140,29 +142,33 @@ const CanvasHostConfig: HostConfig<string, any, any, CanvasComponent, Text, any,
   supportsHydration: false,
 
   appendChild(parentInstance, child) {
-    const childLayer = child.getLayer();
-    const parentLayer = parentInstance.getLayer();
+    if (parentInstance) {
+      const childLayer = child.getLayer();
+      const parentLayer = parentInstance.getLayer();
 
-    if (childLayer.parentLayer === parentLayer) {
-      childLayer.moveToTop();
-    } else {
-      childLayer.inject(parentLayer);
+      if (childLayer.parentLayer === parentLayer) {
+        childLayer.moveToTop();
+      } else {
+        childLayer.inject(parentLayer);
+      }
+
+      parentLayer.invalidateLayout();
     }
-
-    parentLayer.invalidateLayout();
   },
 
   appendChildToContainer(parentInstance, child) {
-    const childLayer = child.getLayer();
-    const parentLayer = parentInstance.getLayer();
+    if (parentInstance) {
+      const childLayer = child.getLayer();
+      const parentLayer = parentInstance.getLayer();
 
-    if (childLayer.parentLayer === parentLayer) {
-      childLayer.moveToTop();
-    } else {
-      childLayer.inject(parentLayer);
+      if (childLayer.parentLayer === parentLayer) {
+        childLayer.moveToTop();
+      } else {
+        childLayer.inject(parentLayer);
+      }
+
+      parentLayer.invalidateLayout();
     }
-
-    parentLayer.invalidateLayout();
   },
 
   insertBefore(parentInstance, child, beforeChild) {

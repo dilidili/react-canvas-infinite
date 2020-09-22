@@ -1,5 +1,4 @@
-import '@types/css-font-loading-module';
-import { FontCacheValue } from './FontFace';
+import { FontFaceType } from './FontFace';
 
 type LoadCallback = (error: null | string) => void;
 
@@ -28,7 +27,7 @@ const kFontLoadTimeout = 3000;
  * Uses TypeKit's default test string, which is said to result
  * in highly varied measured widths when compared to the default font.
  */
-function createTestNode(fontFace: FontCacheValue) {
+function createTestNode(fontFace: FontFaceType) {
   const span = document.createElement('span');
   span.setAttribute('data-fontfamily', fontFace.family);
   span.style.cssText = `${'position:absolute; left:-5000px; top:-5000px; visibility:hidden;' +
@@ -39,7 +38,7 @@ function createTestNode(fontFace: FontCacheValue) {
   return span;
 }
 
-function handleFontLoad(fontFace: FontCacheValue, timeout?: boolean) {
+function handleFontLoad(fontFace: FontFaceType, timeout?: boolean) {
   const error = timeout ? `Exceeded load timeout of ${kFontLoadTimeout}ms` : null;
 
   if (!error) {
@@ -70,7 +69,7 @@ function handleFontLoad(fontFace: FontCacheValue, timeout?: boolean) {
 /**
  * Check if a font face has loaded
  */
-function isFontLoaded(fontFace: FontCacheValue) {
+function isFontLoaded(fontFace: FontFaceType) {
   // For remote URLs, check the cache. System fonts (sans url) assume loaded.
   return _loadedFonts[fontFace.id] != null || !fontFace.url;
 }
@@ -78,7 +77,7 @@ function isFontLoaded(fontFace: FontCacheValue) {
 /**
  * Load a remote font and execute a callback.
  */
-function loadFontNormal(fontFace: FontCacheValue, callback: LoadCallback) {
+function loadFontNormal(fontFace: FontFaceType, callback: LoadCallback) {
   // See if we've previously loaded it.
   if (_loadedFonts[fontFace.id]) {
     return callback(null);
@@ -145,7 +144,7 @@ function loadFontNormal(fontFace: FontCacheValue, callback: LoadCallback) {
 /**
  * Native FontFace loader implementation
  */
-function loadFontNative(fontFace: FontCacheValue, callback: LoadCallback) {
+function loadFontNative(fontFace: FontFaceType, callback: LoadCallback) {
   // See if we've previously loaded it.
   if (_loadedFonts[fontFace.id]) {
     callback(null);
@@ -179,15 +178,11 @@ function loadFontNative(fontFace: FontCacheValue, callback: LoadCallback) {
   const theFontFace = new FontFace(
     fontFace.family,
     `url(${fontFace.url})`,
-    {
-      style: fontFace.attributes.style,
-      weight: !fontFace.attributes.weight ? undefined : fontFace.attributes.weight + '',
-    }
   );
 
   theFontFace.load().then(
     () => {
-      handleFontLoad(fontFace)
+      handleFontLoad(fontFace);
     },
     () => {
       handleFontLoad(fontFace, true);

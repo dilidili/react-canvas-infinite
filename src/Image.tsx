@@ -21,9 +21,9 @@ declare global {
   }
 }
 
-export class RawImage extends CanvasComponent {
-  constructor(type: string) {
-    super(type);
+export class RawImage extends CanvasComponent<RawImageProps> {
+  constructor() {
+    super(LAYER_TYPE);
 
     this.node = new ImageRenderLayer();
   }

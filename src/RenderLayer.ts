@@ -1,7 +1,7 @@
 import { zero } from './FrameUtils';
 import { invalidateBackingStore } from './DrawingUtils';
 import { Frame } from './FrameUtils';
-import { FontFace } from './FontFace';
+import { DefaultFontFace, FontFaceType } from './FontFace';
 import EventTypes from './EventTypes';
 import CanvasComponent, { CanvasStylePropperties } from './CanvasComponent';
 
@@ -38,8 +38,6 @@ class RenderLayer {
   scrollable?: boolean;
 
   _originalStyle?: CanvasStylePropperties;
-
-  [key: keyof typeof EventTypes]: Function;
 
   [key: string]: any;
 
@@ -263,18 +261,13 @@ export class ImageRenderLayer extends RenderLayer {
 }
 
 export class TextRenderLayer extends RenderLayer {
-  constructor(frame: Frame, text: string, fontFace?: FontFace) {
+  constructor(frame?: Frame) {
     super(frame);
-
     this.type = 'text';
-    this.text = text;
-
-    // Fallback to standard font.
-    this.fontFace = fontFace ? fontFace : FontFace.Default();
   }
 
-  text: string;
-  fontFace: FontFace;
+  text: string = '';
+  fontFace: FontFaceType = DefaultFontFace();
   containerInfo?: HTMLDivElement;
 }
 

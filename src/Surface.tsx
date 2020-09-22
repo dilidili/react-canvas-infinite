@@ -5,11 +5,24 @@ import { drawRenderLayer } from './DrawingUtils';
 import { CanvasRenderer } from './CanvasRenderer';
 import hitTest from './hitTest';
 import layoutNode from './layoutNode';
-import DebugCanvasContext from './DebugCanvasContext';
 import ReactReconciler from 'react-reconciler';
+import DebugCanvasContext from './DebugCanvasContext';
 
 const MOUSE_CLICK_DURATION_MS = 300;
 const scale = window.devicePixelRatio || 1;
+
+// React reconciler only supports Component, provider a container for reconcile layer.
+class SurfaceWrapper extends React.Component<{
+  getLayer: () => RenderLayer | null,
+}> {
+  getLayer() {
+    return this.props.getLayer();
+  }
+
+  render() {
+    return this.props.children;
+  }
+}
 
 /**
  * Surface is a standard React component and acts as the main drawing canvas.
@@ -36,12 +49,15 @@ const Surface: React.FC<SurfaceProps> = ({
   const canvasRef = useRef<SurfaceElement>(null);
   const nodeRef = useRef<RenderLayer | null>(null);
   const mountNodeRef = useRef<ReactReconciler.FiberRoot | null>(null);
+  const surfaceWrapperRef = useRef<SurfaceWrapper>(null);
+  const debugContextRef = useRef<DebugCanvasContext>(new DebugCanvasContext(canvasRef as React.RefObject<HTMLDivElement>));
+
   const renderSchedulerRef = useRef<{
     _frameReady: boolean;
     _pendingTick: boolean;
     _nextTickRecomputeLayout: boolean;
   }>({
-    _frameReady: false,
+    _frameReady: true,
     _pendingTick: false,
     _nextTickRecomputeLayout: true,
   });
@@ -63,7 +79,11 @@ const Surface: React.FC<SurfaceProps> = ({
   });
 
   const getContext = () => {
-    return canvasRef.current ? (canvasRef.current as HTMLCanvasElement).getContext('2d') : null;
+    if (enableDebug) {
+      return debugContextRef.current;
+    } else {
+      return canvasRef.current ? (canvasRef.current as HTMLCanvasElement).getContext('2d') : null;
+    }
   };
 
   useEffect(() => {
@@ -74,9 +94,8 @@ const Surface: React.FC<SurfaceProps> = ({
       const rect = canvasRef.current.getBoundingClientRect();
       layerWidth = rect.width;
       layerHeight = rect.height;
-
-      setCanvasWidth(layerWidth * scale);
-      setCanvasHeight(layerHeight * scale);
+      setCanvasWidth(layerWidth);
+      setCanvasHeight(layerHeight);
     }
 
     const ctx = getContext();
@@ -85,14 +104,14 @@ const Surface: React.FC<SurfaceProps> = ({
     const frame = make(0, 0, layerWidth, layerHeight);
     nodeRef.current = new RenderLayer(frame);
 
-    mountNodeRef.current = CanvasRenderer.createContainer(null, false, false);
-    CanvasRenderer.updateContainer(children, mountNodeRef.current, undefined, () => {});
+    mountNodeRef.current = CanvasRenderer.createContainer(surfaceWrapperRef.current, false, false);
+    CanvasRenderer.updateContainer(children, mountNodeRef.current, null, () => {});
 
     // Execute initial draw on mount.
-    batchedTick();
+    batchedTick(true);
 
     return () => {
-      mountNodeRef.current && CanvasRenderer.updateContainer(null, mountNodeRef.current, undefined, () => {});
+      mountNodeRef.current && CanvasRenderer.updateContainer(null, mountNodeRef.current, null, () => {});
     };
   }, []);
 
@@ -100,7 +119,7 @@ const Surface: React.FC<SurfaceProps> = ({
     mountNodeRef.current && CanvasRenderer.updateContainer(
       children,
       mountNodeRef.current,
-      undefined,
+      null,
       () => {},
     );
 
@@ -163,15 +182,20 @@ const Surface: React.FC<SurfaceProps> = ({
 
       ctx && drawRenderLayer(ctx, node);
 
-      if (enableDebug && canvasRef.current && nodeRef.current.containerInfo) {
-        canvasRef.current.appendChild(nodeRef.current.containerInfo);
+      if (enableDebug && canvasRef.current && node.containerInfo) {
+        canvasRef.current.appendChild(node.containerInfo);
       }
     }
   }
 
-  let style = otherProps.style;
+  let style = {
+    ...(otherProps.style || {}),
+    width: canvasWidth,
+    height: canvasHeight,
+  };
+
   if (enableDebug) {
-    style = { ...(otherProps.style || {}), position: 'relative', };
+    style = { ...style, position: 'relative', overflow: 'hidden' };
   }
 
   const eventHanlders = useMemo(() => {
@@ -300,13 +324,13 @@ const Surface: React.FC<SurfaceProps> = ({
     };
   }, []);
 
-  if (!enableDebug) {
-    return (
+  return <SurfaceWrapper getLayer={() => nodeRef.current} ref={surfaceWrapperRef}>
+    {!enableDebug ? (
       <canvas 
         ref={canvasRef as React.RefObject<HTMLCanvasElement>}
         className={className}
-        width={canvasWidth}
-        height={canvasHeight}
+        width={canvasWidth * scale}
+        height={canvasHeight * scale}
         style={style}
 
         onTouchStart={eventHanlders.handleTouchStart}
@@ -323,9 +347,7 @@ const Surface: React.FC<SurfaceProps> = ({
         onDoubleClick={eventHanlders.handleMouseEvent}
         onWheel={eventHanlders.handleScroll}
       />
-    );
-  } else {
-    return (
+    ) : (
       <div
         ref={canvasRef as React.RefObject<HTMLDivElement>}
         className={className}
@@ -341,8 +363,8 @@ const Surface: React.FC<SurfaceProps> = ({
         onDoubleClick={eventHanlders.handleMouseEvent}
         onWheel={eventHanlders.handleScroll}
       />
-    );
-  }
+    )}
+  </SurfaceWrapper>
 };
 
 Surface.displayName = 'Surface';

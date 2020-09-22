@@ -3,6 +3,7 @@ import RenderLayer from './RenderLayer';
 import { make } from './FrameUtils';
 import { emptyObject } from './utils';
 import EventTypes from './EventTypes';
+import { FontFaceType } from './FontFace';
 
 let COMPONENT_GUID = 1;
 
@@ -17,6 +18,7 @@ export type CanvasStylePropperties = React.CSSProperties & {
   shadowColor?: string;
   shadowOffsetX?: number;
   shadowOffsetY?: number;
+  fontFace?: FontFaceType,
 };
 
 
@@ -30,7 +32,7 @@ export type CanvasComponentProps = {
   [k in keyof typeof EventTypes]?: Function;
 };
 
-export default abstract class CanvasComponent {
+export default abstract class CanvasComponent<P extends CanvasComponentProps = CanvasComponentProps> {
   constructor(type: string) {
     this.type = type;
     this.subscriptions = new Map();
@@ -47,7 +49,7 @@ export default abstract class CanvasComponent {
   subscriptions: Map<string, Function | undefined>;
   listeners: Map<string, Function | undefined>;
 
-  abstract applyLayerProps: (prevProps: CanvasComponentProps, props: CanvasComponentProps) => void;
+  abstract applyLayerProps: (prevProps: P, props: P) => void;
 
   putEventListener = (type: keyof typeof EventTypes, listener?: Function) => {
     const { listeners, subscriptions } = this;

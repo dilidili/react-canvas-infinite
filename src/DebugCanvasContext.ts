@@ -1,53 +1,68 @@
-const PropsWillBeSaved = [
+type SaveItem = {
+  scaleX: number;
+  scaleY: number;
+  globalAlpha: number;
+  translateX: number;
+  translateY: number;
+};
+
+const PropsWillBeSaved = <const>[
   'scaleX',
   'scaleY',
-  'alpha',
+  'globalAlpha',
   'translateX',
   'translateY',
 ];
 
-class DebugCanvasContext extends CanvasRenderingContext2D {
-  constructor(instance) {
-    super();
-    this.instance = instance;
+class DebugCanvasContext {
+  constructor(canvasRef: React.RefObject<HTMLDivElement>) {
+    this.canvasRef = canvasRef;
   }
 
-  stack = [];
+  stack: SaveItem[] = [];
 
+  canvasRef?: React.RefObject<HTMLDivElement> = undefined;
   scaleX = 1;
   scaleY = 1;
-  alpha = 1;
+  globalAlpha = 1;
   translateX = 0;
   translateY = 0;
 
-  scale = (scaleX, scaleY) => {
+  scale = (scaleX: number, scaleY: number) => {
     this.scaleX = scaleX;
     this.scaleY = scaleY;
   }
 
-  translate = (translateX, translateY) => {
+  translate = (translateX: number, translateY: number) => {
     this.translateX = translateX;
     this.translateY = translateY;
   }
 
   clearRect = () => {
     // debug mode only supports clear all children nodes.
-    this.instance.canvas.innerHTML = '';
+    this.canvasRef && this.canvasRef.current && (this.canvasRef.current.innerHTML = '');
   }
 
   save = () => {
-    const item = {};
-    PropsWillBeSaved.forEach(key => {
+    const item: {
+      [key: string]: number,
+    } = {};
+
+    PropsWillBeSaved.forEach((key: typeof PropsWillBeSaved[number]) => {
       item[key] = this[key];
     });
-    this.stack.push(item);
+
+    this.stack.push(item as SaveItem);
   }
 
   restore = () => {
     const item = this.stack.pop();
-    PropsWillBeSaved.forEach(key => {
-      this[key] = item[key];
-    });
+
+    if (item) {
+      PropsWillBeSaved.forEach(key => {
+        this[key] = item[key];
+      });
+    }
   } 
 
   initNextElement = () => {

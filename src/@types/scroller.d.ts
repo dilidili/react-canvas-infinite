@@ -43,15 +43,11 @@ declare module 'scroller' {
     scrollBy(leftOffset: number, topOffset: number, animate?: boolean): void;
   
     doMouseZoom(wheelData: number, timeStamp: number, pageX: number, pageY: number): void;
-    doTouchStart(touches: Array<{
-      pageX: number;
-      pageY: number
-    }>, timeStamp: number): void;
-    doTouchMove(touches: Array<{
-      pageX: number;
-      pageY: number
-    }>, timeStamp: number, scale?: number): void;
+    doTouchStart(touches: React.TouchList, timeStamp: number): void;
+    doTouchMove(touches: React.TouchList, timeStamp: number, scale?: number): void;
     doTouchEnd(timeStamp: number): void;
+    __contentHeight: number;
+    __clientHeight: number;
   }
   
   export class EasyScroller  {

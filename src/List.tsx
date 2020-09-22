@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, } from 'react';
 import layoutNode from './layoutNode'
 import { Group } from './Core';
 import GroupComponent from './Group';
-import { make } from './FrameUtils';
-import CanvasCromponent, { CanvasStylePropperties } from './CanvasComponent';
+import { CanvasStylePropperties } from './CanvasComponent';
 import { useForceUpdate } from './utils';
-import Surface from './Surface';
-import clamp from './clamp';
 import { Scroller } from 'scroller';
 import { CanvasRenderer } from './CanvasRenderer';
 import ReactReconciler from 'react-reconciler';
@@ -14,7 +11,7 @@ import ReactReconciler from 'react-reconciler';
 const component = new GroupComponent();
 
 const List: React.FC<{
-  itemGetter: (index: number) => React.ReactNode,
+  itemGetter: (index: number) => React.ReactElement,
   numberOfItemsGetter: () => number,
   onLoadMore: () => Promise<any>,
   style: {
@@ -39,7 +36,7 @@ const List: React.FC<{
 
   const containerRef = useRef();
   const mountNodeRef = useRef<ReactReconciler.FiberRoot | null>(null);
-  const childrenScrollTopRef = useRef([]);
+  const childrenScrollTopRef = useRef<number[]>([]);
   const [scrollTop, setScrollTop] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const forceUpdate = useForceUpdate();
@@ -95,14 +92,14 @@ const List: React.FC<{
     }, 0);
   }, []);
 
-  const renderItem = (itemIndex, translateY) => {
-    var item = itemGetter(itemIndex, scrollTop);
+  const renderItem = (itemIndex: number, translateY: number) => {
+    const item = itemGetter(itemIndex);
 
     return (
       React.cloneElement(item, {
         key: itemIndex,
         useBackingStore: !!(item.props.useBackingStore && scrollerRef.current),
-        ref: (ref) => {
+        ref: (ref: React.ReactElement) => {
           if (ref) {
             const scrollTopList = childrenScrollTopRef.current;
             if (scrollTopList[itemIndex] == null) {
@@ -157,25 +154,25 @@ const List: React.FC<{
     return itemIndexes.map((i) => renderItem(i, translateY));
   }
 
-  const handleTouchStart = (e) => {
+  const handleTouchStart: React.TouchEventHandler = (e) => {
     if (scrollerRef.current) {
       scrollerRef.current.doTouchStart(e.touches, e.timeStamp);
     }
   };
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove: React.TouchEventHandler = (e) => {
     if (scrollerRef.current) {
-      scrollerRef.current.doTouchMove(e.touches, e.timeStamp, e.scale);
+      scrollerRef.current.doTouchMove(e.touches, e.timeStamp);
     }
   }
 
-  const handleTouchEnd = (e) => {
+  const handleTouchEnd: React.TouchEventHandler = (e) => {
     if (scrollerRef.current) {
       scrollerRef.current.doTouchEnd(e.timeStamp);
     }
   }
 
-  const handleWheel = ({ deltaY }) => {
+  const handleWheel: React.WheelEventHandler = ({ deltaY }) => {
     if (scrollerRef.current) {
       scrollerRef.current.scrollBy(0, deltaY);
     }

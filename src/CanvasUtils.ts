@@ -3,7 +3,7 @@ import measureText from './measureText';
 import DebugCanvasContext from './DebugCanvasContext';
 import { Img } from './ImageCache';
 import { ImageRenderLayer, TextRenderLayer } from './RenderLayer';
-import { FontCacheValue } from './FontFace';
+import { FontFaceType } from './FontFace';
 
 /**
  * Draw an image into a <canvas>. This operation requires that the image
@@ -114,7 +114,7 @@ function drawText(
   y: number,
   width: number,
   height: number,
-  fontFace: FontCacheValue,
+  fontFace: FontFaceType,
   _options: Partial<TextOption>,
   layer: TextRenderLayer,
 ) {
@@ -131,13 +131,15 @@ function drawText(
 
 
   if (ctx instanceof DebugCanvasContext && layer.containerInfo) {
-    layer.containerInfo.innerText = layer.text;
+    layer.containerInfo.innerText = layer.text || '';
     layer.containerInfo.style.fontFamily = fontFace.family;
     layer.containerInfo.style.lineHeight = `${options.lineHeight}px`;
     layer.containerInfo.style.backgroundColor = options.backgroundColor;
     layer.containerInfo.style.color = options.color;
     layer.containerInfo.style.fontSize = `${options.fontSize}px`;
   } else {
+    ctx = ctx as CanvasRenderingContext2D;
+
     const textMetrics = measureText(
       text,
       width,
@@ -161,6 +163,7 @@ function drawText(
     } ${options.fontSize}px ${fontFace.family}`;
 
     textMetrics.lines.forEach((line, index) => {
+      ctx = ctx as CanvasRenderingContext2D;
       currText = line.text;
       currY = y + options.lineHeight * index + options.lineHeight / 2;
 

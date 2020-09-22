@@ -11,7 +11,7 @@ declare global {
 
 const LAYER_TYPE = 'group';
 
-class Group extends CanvasComponent {
+class Group extends CanvasComponent<CanvasComponentProps> {
   constructor() {
     super(LAYER_TYPE);
 

@@ -1,8 +1,8 @@
 import ImageCache from './ImageCache';
 import { isFontLoaded } from './FontUtils';
-import FontFace from './FontFace'
-import { drawGradient, drawText, drawImage } from './CanvasUtils'
-import Canvas from './Canvas'
+import { drawText, drawImage } from './CanvasUtils'
+import { FontFaceType } from './FontFace';
+import Canvas from './Canvas';
 import DebugCanvasContext from './DebugCanvasContext';
 import RenderLayer, { ImageRenderLayer, TextRenderLayer } from './RenderLayer';
 
@@ -49,32 +49,29 @@ function invalidateAllBackingStores() {
 /**
  * Check if a layer is using a given image URL.
  */
-function layerContainsImage(layer, imageUrl) {
+function layerContainsImage(layer: RenderLayer, imageUrl: string) {
   // Check the layer itself.
   if (layer.type === 'image' && layer.imageUrl === imageUrl) {
-    return layer
+    return layer;
   }
 
   // Check the layer's children.
   if (layer.children) {
     for (let i = 0, len = layer.children.length; i < len; i++) {
       if (layerContainsImage(layer.children[i], imageUrl)) {
-        return layer.children[i]
+        return layer.children[i];
       }
     }
   }
 
-  return false
+  return false;
 }
 
 /**
  * Check if a layer is using a given FontFace.
  *
- * @param {RenderLayer} layer
- * @param {FontFace} fontFace
- * @return {Boolean}
  */
-function layerContainsFontFace(layer, fontFace) {
+function layerContainsFontFace(layer: RenderLayer, fontFace: FontFaceType) {
   // Check the layer itself.
   if (
     layer.type === 'text' &&
@@ -99,10 +96,8 @@ function layerContainsFontFace(layer, fontFace) {
 /**
  * Invalidates the backing stores for layers which contain an image layer
  * associated with the given imageUrl.
- *
- * @param {String} imageUrl
  */
-function handleImageLoad(imageUrl) {
+function handleImageLoad(imageUrl: string) {
   _backingStores.forEach(backingStore => {
     if (layerContainsImage(backingStore.layer, imageUrl)) {
       invalidateBackingStore(backingStore.id)
@@ -113,13 +108,11 @@ function handleImageLoad(imageUrl) {
 /**
  * Invalidates the backing stores for layers which contain a text layer
  * associated with the given font face.
- *
- * @param {FontFace} fontFace
  */
-function handleFontLoad(fontFace) {
+function handleFontLoad(fontFace: FontFaceType) {
   _backingStores.forEach(backingStore => {
     if (layerContainsFontFace(backingStore.layer, fontFace)) {
-      invalidateBackingStore(backingStore.id)
+      invalidateBackingStore(backingStore.id);
     }
   })
 }
@@ -268,7 +261,7 @@ function drawTextRenderLayer(ctx: CanvasRenderingContext2D, layer: TextRenderLay
     layer.frame.y,
     layer.frame.width,
     layer.frame.height,
-    fontFace,
+    layer.fontFace,
     {
       fontSize: layer.fontSize,
       lineHeight: layer.lineHeight,
@@ -293,37 +286,25 @@ function getDrawFunction(type: string): DrawFunction {
   return layerTypesToDrawFunction[type] || drawBaseRenderLayer;
 }
 
-function registerLayerType(type, drawFunction) {
-  // eslint-disable-next-line no-prototype-builtins
-  if (layerTypesToDrawFunction.hasOwnProperty(type)) {
-    throw new Error(`type ${type} already registered`)
-  }
-
-  layerTypesToDrawFunction[type] = drawFunction
-}
-
 /**
  * @private
  */
-function sortByZIndexAscending(layerA, layerB) {
+function sortByZIndexAscending(layerA: RenderLayer, layerB: RenderLayer) {
   return (layerA.zIndex || 0) - (layerB.zIndex || 0)
 }
 
-let drawCacheableRenderLayer = null
-// eslint-disable-next-line import/no-mutable-exports
-
-function drawChildren(layer, ctx, start, end) {
-  const { children } = layer
-  if (children.length === 0) return
+function drawChildren(layer: RenderLayer, ctx: CanvasRenderingContext2D, start?: number, end?: number) {
+  const { children } = layer;
+  if (children.length === 0) return;
 
   // Opimization
   if (children.length === 1) {
-    drawRenderLayer(ctx, children[0])
+    drawRenderLayer(ctx, children[0]);
   } else if (children.length === 2) {
-    const c0 = children[0]
-    const c1 = children[1]
+    const c0 = children[0];
+    const c1 = children[1];
 
-    if (c0.zIndex < c1.zIndex) {
+    if ((c0.zIndex || 0) < (c1.zIndex || 0)) {
       drawRenderLayer(ctx, c0)
       drawRenderLayer(ctx, c1)
     } else {
@@ -348,7 +329,7 @@ function drawChildren(layer, ctx, start, end) {
 /**
  * Draw a RenderLayer instance to a <canvas> context.
  */
-const drawRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLayer) => {
+const drawRenderLayer = (ctx: CanvasRenderingContext2D | DebugCanvasContext, layer: RenderLayer) => {
   const drawFunction = getDrawFunction(layer.type);
   const isDebug = ctx instanceof DebugCanvasContext;
 
@@ -404,7 +385,7 @@ const drawRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLayer) => {
  * drawn into the given context. This will populate the layer backing store
  * cache with the result.
  */
-drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLayer, drawFunction: DrawFunction) => {
+const drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLayer, drawFunction: DrawFunction) => {
   if (!layer.backingStoreId) return;
 
   // See if there is a pre-drawn canvas in the pool.
@@ -510,5 +491,4 @@ export {
   handleFontLoad,
   layerContainsImage,
   layerContainsFontFace,
-  registerLayerType
 }

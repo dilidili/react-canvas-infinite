@@ -1,6 +1,6 @@
 import computeLayout from 'css-layout';
 import { emptyObject } from './utils';
-import FontFace from './FontFace';
+import { DefaultFontFace } from './FontFace';
 import RenderLayer from './RenderLayer';
 
 const canvas = document.createElement('canvas');
@@ -9,8 +9,8 @@ const ctx = canvas.getContext('2d');
 interface LayoutNode {
   layer: RenderLayer,
   layout: {
-    width: number,
-    height: number,
+    width: number | undefined,
+    height: number | undefined,
     top: 0,
     left: 0,
   },
@@ -22,8 +22,8 @@ function createNode(layer: RenderLayer): LayoutNode {
   return {
     layer,
     layout: {
-      width: 0, // computeLayout will mutate
-      height: 0, // computeLayout will mutate
+      width: undefined, // computeLayout will mutate
+      height: undefined, // computeLayout will mutate
       top: 0,
       left: 0
     },
@@ -33,7 +33,7 @@ function createNode(layer: RenderLayer): LayoutNode {
   }
 }
 
-function walkNode(node, parentLeft, parentTop) {
+function walkNode(node: LayoutNode, parentLeft?: number, parentTop?: number) {
   node.layer.frame.x = node.layout.left + (parentLeft || 0)
   node.layer.frame.y = node.layout.top + (parentTop || 0)
   node.layer.frame.width = node.layout.width
@@ -49,16 +49,18 @@ function preWalkNode(node: LayoutNode) {
   const layer = node.layer;
 
   if (layer.type === 'text') {
-    const fontFace = layer.fontFace || FontFace.Default();
+    const fontFace = layer.fontFace || DefaultFontFace();
     const fontSize = layer.fontSize || 16;
     const lineHeight = layer.lineHeight || 18;
 
-    ctx.font = `${fontFace.attributes.style} normal ${
-      fontFace.attributes.weight
-    } ${fontSize}px ${fontFace.family}`;
+    if (ctx) {
+      ctx.font = `${fontFace.attributes.style} normal ${
+        fontFace.attributes.weight
+      } ${fontSize}px ${fontFace.family}`;
 
-    const { width } = ctx.measureText(layer.text);
-    node.style = { ...node.style, width: width, height: lineHeight, };
+      const { width } = ctx.measureText(layer.text);
+      node.style = { ...node.style, width: width, height: lineHeight, };
+    }
   }
 
   if (node.children && node.children.length > 0) {
