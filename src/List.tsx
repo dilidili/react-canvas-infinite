@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, } from 'react';
+import React, { useEffect, useRef, useReducer } from 'react';
 import layoutNode from './layoutNode'
 import { Group } from './Core';
 import GroupComponent from './Group';
@@ -37,34 +37,48 @@ const List: React.FC<{
   const containerRef = useRef();
   const mountNodeRef = useRef<ReactReconciler.FiberRoot | null>(null);
   const childrenScrollTopRef = useRef<number[]>([]);
-  const [scrollTop, setScrollTop] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const forceUpdate = useForceUpdate();
   const scrollWidth = style ? style.width : 0;
+  const scrollerRef = useRef<Scroller | null>(null);
+  const scrollReducer = useReducer<
+    React.Reducer<{
+      isLoading: boolean,
+      scrollTop: number,
+    }, { type: 'scroll', top: number } | { type: 'updateIsLoading', isLoading: boolean }>
+  >((state, action) => {
+    if (action.type === 'scroll') {
+      const scrollTop = action.top;
+      const ret = { ...state, scrollTop };
 
-  const handleScroll = (_left: number, top: number) => {
-    setScrollTop(top);
+      if (scrollerRef && scrollerRef.current && !state.isLoading && scrollTop >= scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight) {
+        ret.isLoading = true;
 
-    if (scrollerRef && !isLoading && top >= scrollerRef.current.__contentHeight - scrollerRef.current.__clientHeight) {
-      setIsLoading(true);
-      const loadMorePromise = onLoadMore && onLoadMore();
-      loadMorePromise.then(() => {
-        setIsLoading(false);
-      });
+        const loadMorePromise = onLoadMore && onLoadMore();
+        loadMorePromise.then(() => {
+          scrollReducer[1]({
+            type: 'updateIsLoading',
+            isLoading: false,
+          });
+        });
+      }
+
+      if (onScroll) {
+        onScroll(scrollTop);
+      }
+
+      return ret;
+    } else if (action.type === 'updateIsLoading') {
+      return {
+        ...state,
+        isLoading: action.isLoading,
+      };
+    } else {
+      return state;
     }
-
-    if (onScroll) {
-      onScroll(top);
-    }
-  };
-
-  const scrollerRef = useRef(new Scroller(handleScroll, {
-    scrollingX: false,
-    scrollingY: true,
-    animating: true,
-    decelerationRate: scrollingDeceleration,
-    penetrationAcceleration: scrollingPenetrationAcceleration,
-  }));
+  }, {
+    isLoading: false,
+    scrollTop: 0,
+  });
 
   const computeItemFrame = (index: number) => {
     mountNodeRef.current && CanvasRenderer.updateContainer(itemGetter(index), mountNodeRef.current, null, () => {});
@@ -75,6 +89,20 @@ const List: React.FC<{
   useEffect(() => {
     // create reconciler
     mountNodeRef.current = CanvasRenderer.createContainer(component, false, false);
+
+    // create scroller
+    scrollerRef.current = new Scroller((_left: number, top: number) => {
+      scrollReducer[1]({
+        type: 'scroll',
+        top,
+      });
+    }, {
+      scrollingX: false,
+      scrollingY: true,
+      animating: true,
+      decelerationRate: scrollingDeceleration,
+      penetrationAcceleration: scrollingPenetrationAcceleration,
+    });
 
     setTimeout(() => {
       const itemCount = numberOfItemsGetter();
@@ -87,7 +115,7 @@ const List: React.FC<{
         scrollHeight += height;
       }
 
-      scrollerRef.current.setDimensions(style.width, style.height, scrollWidth, scrollHeight);
+      scrollerRef.current && scrollerRef.current.setDimensions(style.width, style.height, scrollWidth, scrollHeight);
       forceUpdate();
     }, 0);
   }, []);
@@ -107,7 +135,7 @@ const List: React.FC<{
                 if (scrollTopList[i] != null) {
                   const computedFrame = computeItemFrame(itemIndex);
                   scrollTopList[itemIndex] = scrollTopList[i] + computedFrame.height;
-                  scrollerRef.current.setDimensions(style.width, style.height, scrollWidth, scrollTopList[itemIndex] + computedFrame.height);
+                  scrollerRef.current && scrollerRef.current.setDimensions(style.width, style.height, scrollWidth, scrollTopList[itemIndex] + computedFrame.height);
                   break;
                 }
               }
@@ -133,7 +161,7 @@ const List: React.FC<{
       }
     } else {
       for (let i = 0; i < itemCount; i++) {
-        let itemScrollTop = childrenScrollTopRef.current[i] - scrollTop;
+        let itemScrollTop = childrenScrollTopRef.current[i] - scrollReducer[0].scrollTop;
 
         // items completely reach over off-screen bottom.
         if (itemScrollTop >= style.height + preloadBatchSize * style.height) {
@@ -150,7 +178,7 @@ const List: React.FC<{
       }
     } 
 
-    const translateY = itemIndexes[0] !== undefined ? childrenScrollTopRef.current[itemIndexes[0]] - scrollTop : 0;
+    const translateY = itemIndexes[0] !== undefined ? childrenScrollTopRef.current[itemIndexes[0]] - scrollReducer[0].scrollTop : 0;
     return itemIndexes.map((i) => renderItem(i, translateY));
   }
 

@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 import RenderLayer from './RenderLayer';
 import { make } from './FrameUtils';
 import { drawRenderLayer } from './DrawingUtils';
@@ -47,7 +47,7 @@ const Surface: React.FC<SurfaceProps> = ({
   const [canvasHeight, setCanvasHeight] = useState<number>(height);
 
   const canvasRef = useRef<SurfaceElement>(null);
-  const nodeRef = useRef<RenderLayer | null>(null);
+  const nodeRef = useRef<RenderLayer>(new RenderLayer());
   const mountNodeRef = useRef<ReactReconciler.FiberRoot | null>(null);
   const surfaceWrapperRef = useRef<SurfaceWrapper>(null);
   const debugContextRef = useRef<DebugCanvasContext>(new DebugCanvasContext(canvasRef as React.RefObject<HTMLDivElement>));
@@ -102,7 +102,7 @@ const Surface: React.FC<SurfaceProps> = ({
     ctx && ctx.scale(scale, scale);
 
     const frame = make(0, 0, layerWidth, layerHeight);
-    nodeRef.current = new RenderLayer(frame);
+    nodeRef.current.frame = frame;
 
     mountNodeRef.current = CanvasRenderer.createContainer(surfaceWrapperRef.current, false, false);
     CanvasRenderer.updateContainer(children, mountNodeRef.current, null, () => {});
@@ -130,48 +130,7 @@ const Surface: React.FC<SurfaceProps> = ({
   });
 
   // render scheduler.
-  const batchedTick = (recomputeLayout = false) => {
-    const renderScheduler = renderSchedulerRef.current;
-
-    if (renderScheduler._frameReady === false) {
-      renderScheduler._pendingTick = true;
-      renderScheduler._nextTickRecomputeLayout = recomputeLayout;
-      return;
-    }
-
-    tick(recomputeLayout);
-  }
-
-  const tick = (recomputeLayout: boolean) => {
-    const renderScheduler = renderSchedulerRef.current;
-
-    // Block updates until next animation frame.
-    renderScheduler._frameReady = false;
-    clear();
-    draw(recomputeLayout);
-    requestAnimationFrame(afterTick);
-  }
-
-  const afterTick = () => {
-    const renderScheduler = renderSchedulerRef.current;
-
-    // Execute pending draw that may have been scheduled during previous frame
-    renderScheduler._frameReady = true;
-
-    // canvas might be already removed from DOM
-    if (renderScheduler._pendingTick && canvasRef.current) {
-      renderScheduler._pendingTick = false;
-      batchedTick(renderScheduler._nextTickRecomputeLayout);
-      renderScheduler._nextTickRecomputeLayout = true;
-    }
-  }
-
-  const clear = () => {
-    const ctx = getContext();
-    ctx && ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-  }
-
-  const draw = (recomputeLayout = true) => {
+  const draw = useCallback((recomputeLayout = true) => {
     if (nodeRef.current) {
       const node = nodeRef.current;
       const ctx = getContext();
@@ -186,7 +145,54 @@ const Surface: React.FC<SurfaceProps> = ({
         canvasRef.current.appendChild(node.containerInfo);
       }
     }
-  }
+  }, [enableDebug])
+
+  const afterTick = useCallback(() => {
+    const renderScheduler = renderSchedulerRef.current;
+
+    // Execute pending draw that may have been scheduled during previous frame.
+    renderScheduler._frameReady = true;
+
+    // Canvas might be already removed from DOM.
+    if (renderScheduler._pendingTick && canvasRef.current) {
+      renderScheduler._pendingTick = false;
+      batchedTick(renderScheduler._nextTickRecomputeLayout);
+      renderScheduler._nextTickRecomputeLayout = true;
+    }
+  }, [])
+
+  const tick = useCallback((recomputeLayout: boolean) => {
+    const renderScheduler = renderSchedulerRef.current;
+
+    // Block updates until next animation frame.
+    renderScheduler._frameReady = false;
+
+    const ctx = getContext();
+    ctx && ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+    draw(recomputeLayout);
+    requestAnimationFrame(afterTick);
+  }, [draw, afterTick]);
+
+  const batchedTick = useCallback((recomputeLayout = false) => {
+    const renderScheduler = renderSchedulerRef.current;
+
+    if (renderScheduler._frameReady === false) {
+      renderScheduler._pendingTick = true;
+      renderScheduler._nextTickRecomputeLayout = recomputeLayout;
+      return;
+    }
+
+    tick(recomputeLayout);
+  }, [tick]);
+
+
+  useEffect(() => {
+    // Replace root the draw method of root RenderLayer.
+    if (nodeRef.current) {
+      nodeRef.current.draw = batchedTick;
+    }
+  }, [batchedTick])
 
   let style = {
     ...(otherProps.style || {}),

@@ -6,9 +6,9 @@ class Canvas {
   static poolSize = 300;
 
   constructor(
-    public width: number,
-    public height: number,
-    public scale: number = window.devicePixelRatio,
+    width: number,
+    height: number,
+    scale: number = window.devicePixelRatio,
   ) {
     // Re-purposing an existing canvas element.
     if (!this._canvas) {
@@ -20,9 +20,13 @@ class Canvas {
     const ctx = this._canvas.getContext('2d');
 
     if (ctx) {
-      ctx.scale(this.scale, this.scale);
+      ctx.scale(scale, scale);
     }
   }
+
+  width = 0;
+  height = 0;
+  scale = 0;
 
   reset(width: number, height: number, scale: number) {
     this.width = width;

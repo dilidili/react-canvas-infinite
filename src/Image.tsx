@@ -59,13 +59,23 @@ const Image: React.FC<ImageProps> = (props) => {
   const backgroundStyle = Object.assign({}, props.style);
   const useBackingStore = !!loaded;
 
-  const handleImageLoad = () => {
-    setLoaded(true);
-    setImageAlpha(1);
-  };
-
   useEffect(() => {
-    ImageCache.get(props.src).on('load', handleImageLoad);
+    const handleImageLoad = () => {
+      setLoaded(true);
+      setImageAlpha(1);
+    };
+
+    const image = ImageCache.get(props.src);
+
+    if (image.isLoaded()) {
+      handleImageLoad();
+      return undefined;
+    } else {
+      image.on('load', handleImageLoad);
+      return () => {
+        ImageCache.get(props.src).off('load', handleImageLoad);
+      }
+    }
   }, [props.src]);
 
   // Hide the image until loaded.

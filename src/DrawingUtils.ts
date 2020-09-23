@@ -272,7 +272,7 @@ function drawTextRenderLayer(ctx: CanvasRenderingContext2D, layer: TextRenderLay
   )
 }
 
-type DrawFunction = (ctx: CanvasRenderingContext2D, layer: RenderLayer) => void;
+type DrawFunction = (ctx: CanvasRenderingContext2D | DebugCanvasContext, layer: RenderLayer) => void;
 
 const layerTypesToDrawFunction: {
   [key: string]: DrawFunction,
@@ -293,7 +293,7 @@ function sortByZIndexAscending(layerA: RenderLayer, layerB: RenderLayer) {
   return (layerA.zIndex || 0) - (layerB.zIndex || 0)
 }
 
-function drawChildren(layer: RenderLayer, ctx: CanvasRenderingContext2D, start?: number, end?: number) {
+function drawChildren(layer: RenderLayer, ctx: CanvasRenderingContext2D | DebugCanvasContext, start?: number, end?: number) {
   const { children } = layer;
   if (children.length === 0) return;
 
@@ -362,7 +362,7 @@ const drawRenderLayer = (ctx: CanvasRenderingContext2D | DebugCanvasContext, lay
   // If the layer is bitmap-cacheable, draw in a pooled off-screen canvas.
   // We disable backing stores on pad since we flip there.
   if (layer.backingStoreId && !isDebug) {
-    drawCacheableRenderLayer(ctx, layer, drawFunction);
+    drawCacheableRenderLayer(ctx as CanvasRenderingContext2D, layer, drawFunction);
   } else {
     ctx.save();
     drawFunction(ctx, layer);

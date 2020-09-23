@@ -3,7 +3,7 @@ import { EventEmitter } from 'events';
 const NOOP = () => {};
 
 export class Img extends EventEmitter {
-  constructor(private _originalSrc: string) {
+  constructor(_originalSrc: string) {
     super();
 
     this._img = new Image();
@@ -27,7 +27,7 @@ export class Img extends EventEmitter {
   }
 
   getOriginalSrc() {
-    return this._originalSrc;
+    return this._img.src;
   }
 
   /**
