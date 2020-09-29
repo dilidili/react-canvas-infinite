@@ -24,7 +24,6 @@ export type CanvasStylePropperties = React.CSSProperties & {
 
 export type CanvasComponentProps = {
   useBackingStore?: boolean;
-  scrollable?: boolean;
   style?: CanvasStylePropperties;
   children?: React.ReactNode;
   ref?: React.RefObject<any>;
@@ -153,13 +152,11 @@ export default abstract class CanvasComponent<P extends CanvasComponentProps = C
     const layer = this.node;
 
     // Generate backing store ID as needed.
-    if ((props.useBackingStore || props.scrollable) && layer.backingStoreId !== this._comopnentId) {
+    if (props.useBackingStore && layer.backingStoreId !== this._comopnentId) {
       layer.backingStoreId = this._comopnentId;
-    } else if (!(props.useBackingStore || props.scrollable) && layer.backingStoreId) {
+    } else if (!props.useBackingStore && layer.backingStoreId) {
       layer.backingStoreId = undefined;
     }
-
-    layer.scrollable = !!props.scrollable;
 
     // Register events.
     let type: keyof typeof EventTypes;

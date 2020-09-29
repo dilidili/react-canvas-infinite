@@ -13,13 +13,13 @@ declare global {
   }
 }
 
-const LAYER_TYPE = 'text';
+const LAYER_TYPE = 'Text';
 
 class Text extends CanvasComponent<TextProps> {
   constructor(type: string) {
     super(type);
 
-    this.node = new TextRenderLayer();
+    this.node = new TextRenderLayer(this);
   }
 
   node: TextRenderLayer;
@@ -37,7 +37,7 @@ class Text extends CanvasComponent<TextProps> {
 
     if (layer.color !== style.color) layer.color = style.color;
 
-    if (layer.fontFace !== style.fontFace) layer.fontFace = style.fontFace || DefaultFontFace();
+    if (layer.fontFace !== style.fontFace || !layer.fontFace) layer.fontFace = style.fontFace || DefaultFontFace();
 
     if (layer.fontSize !== style.fontSize) layer.fontSize = style.fontSize;
 

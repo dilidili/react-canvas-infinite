@@ -5,17 +5,18 @@ import { DefaultFontFace, FontFaceType } from './FontFace';
 import EventTypes from './EventTypes';
 import CanvasComponent, { CanvasStylePropperties } from './CanvasComponent';
 
-type LayerType = 'image' | 'text' | 'group';
+export type LayerType = 'RawImage' | 'Text' | 'Group';
 
 class RenderLayer {
-  constructor(frame?: Frame) {
+  constructor(component: CanvasComponent, frame?: Frame) {
+    this.component = component;
     this.frame = frame || zero();
-    this.reset();
-    this.type = 'group';
+    this.type = 'Group';
   }
 
   type: LayerType;
   frame: Frame;
+  component: CanvasComponent;
   backingStoreId?: number;
 
   // traverse layer tree
@@ -34,8 +35,6 @@ class RenderLayer {
   zIndex?: number;
   translateX?: number;
   translateY?: number;
-
-  scrollable?: boolean;
 
   _originalStyle?: CanvasStylePropperties;
 
@@ -237,7 +236,7 @@ class RenderLayer {
    */
   invalidateBackingStore() {
     if (this.backingStoreId) {
-      invalidateBackingStore(this.backingStoreId)
+      invalidateBackingStore(this.backingStoreId);
     }
 
     this.invalidateLayout();
@@ -252,18 +251,18 @@ class RenderLayer {
 }
 
 export class ImageRenderLayer extends RenderLayer {
-  constructor(frame?: Frame) {
-    super(frame);
-    this.type = 'image';
+  constructor(component: CanvasComponent, frame?: Frame) {
+    super(component, frame);
+    this.type = 'RawImage';
   }
 
   imageUrl?: string;
 }
 
 export class TextRenderLayer extends RenderLayer {
-  constructor(frame?: Frame) {
-    super(frame);
-    this.type = 'text';
+  constructor(component: CanvasComponent, frame?: Frame) {
+    super(component, frame);
+    this.type = 'Text';
   }
 
   text: string = '';

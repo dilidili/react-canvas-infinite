@@ -14,7 +14,7 @@ const Demo = () => {
         // enableDebug={true}
       >
         <List
-          style={{ fontFace: FontFace('sans-serif'), height: 300, width: 500 }}
+          style={{ fontFace: FontFace('sans-serif'), height: 400, width: 400 }}
           numberOfItemsGetter={() => dataList.length}
           itemGetter={(index) => {
             const data = dataList[index];
@@ -24,7 +24,7 @@ const Demo = () => {
                 <Image src={data.imageUrl} style={{ marginRight: 10, width: 40, height: 40, borderRadius: 20 }}></Image>
 
                 <Group style={{ height: 40, justifyContent: 'space-between' }}>
-                  <Text>{data.title}</Text>
+                  <Text>{`${index} ${data.title}`}</Text>
                   <Text>{data.excerpt}</Text>
                 </Group>
               </Group>
@@ -33,7 +33,7 @@ const Demo = () => {
           onLoadMore={() => {
             return new Promise((resolve) => {
               setTimeout(() => {
-                setDataList(datas => datas.concat(datas.slice(0, 3)));
+                setDataList(datas => datas.concat(datas.slice(0, 8)));
                 resolve();
               }, 500);
             });

@@ -7,7 +7,7 @@ import { ImageRenderLayer } from './RenderLayer';
 
 const RawImageName = 'RawImage';
 
-const LAYER_TYPE = 'image';
+const LAYER_TYPE = RawImageName;
 
 interface RawImageProps extends CanvasComponentProps {
   src?: string;
@@ -25,7 +25,7 @@ export class RawImage extends CanvasComponent<RawImageProps> {
   constructor() {
     super(LAYER_TYPE);
 
-    this.node = new ImageRenderLayer();
+    this.node = new ImageRenderLayer(this);
   }
 
   node: ImageRenderLayer;
@@ -51,29 +51,33 @@ type ImageProps = {
 }
 
 const Image: React.FC<ImageProps> = (props) => {
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(ImageCache.has(props.src));
   const [imageAlpha, setImageAlpha] = useState(0);
 
   const imageStyle = Object.assign({}, props.style);
   const style = Object.assign({}, props.style);
   const backgroundStyle = Object.assign({}, props.style);
-  const useBackingStore = !!loaded;
 
   useEffect(() => {
-    const handleImageLoad = () => {
+    if (ImageCache.has(props.src)) {
       setLoaded(true);
       setImageAlpha(1);
-    };
-
-    const image = ImageCache.get(props.src);
-
-    if (image.isLoaded()) {
-      handleImageLoad();
-      return undefined;
     } else {
-      image.on('load', handleImageLoad);
-      return () => {
-        ImageCache.get(props.src).off('load', handleImageLoad);
+      const handleImageLoad = () => {
+        setLoaded(true);
+        setImageAlpha(1);
+      };
+
+      const image = ImageCache.get(props.src);
+
+      if (image.isLoaded()) {
+        handleImageLoad();
+        return undefined;
+      } else {
+        image.on('load', handleImageLoad);
+        return () => {
+          ImageCache.get(props.src).off('load', handleImageLoad);
+        }
       }
     }
   }, [props.src]);
@@ -92,7 +96,7 @@ const Image: React.FC<ImageProps> = (props) => {
       <RawImageName
         src={props.src}
         style={imageStyle}
-        useBackingStore={useBackingStore}
+        useBackingStore={!!loaded}
       />
     </Group>
   )

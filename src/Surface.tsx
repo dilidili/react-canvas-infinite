@@ -7,6 +7,7 @@ import hitTest from './hitTest';
 import layoutNode from './layoutNode';
 import ReactReconciler from 'react-reconciler';
 import DebugCanvasContext from './DebugCanvasContext';
+import Group from './Group';
 
 const MOUSE_CLICK_DURATION_MS = 300;
 const scale = window.devicePixelRatio || 1;
@@ -47,7 +48,10 @@ const Surface: React.FC<SurfaceProps> = ({
   const [canvasHeight, setCanvasHeight] = useState<number>(height);
 
   const canvasRef = useRef<SurfaceElement>(null);
-  const nodeRef = useRef<RenderLayer>(new RenderLayer());
+  const nodeRef = useRef<RenderLayer>();
+  if (nodeRef.current == null) {
+    nodeRef.current = new RenderLayer(new Group())
+  }
   const mountNodeRef = useRef<ReactReconciler.FiberRoot | null>(null);
   const surfaceWrapperRef = useRef<SurfaceWrapper>(null);
   const debugContextRef = useRef<DebugCanvasContext>(new DebugCanvasContext(canvasRef as React.RefObject<HTMLDivElement>));
@@ -102,7 +106,7 @@ const Surface: React.FC<SurfaceProps> = ({
     ctx && ctx.scale(scale, scale);
 
     const frame = make(0, 0, layerWidth, layerHeight);
-    nodeRef.current.frame = frame;
+    nodeRef.current && (nodeRef.current.frame = frame);
 
     mountNodeRef.current = CanvasRenderer.createContainer(surfaceWrapperRef.current, false, false);
     CanvasRenderer.updateContainer(children, mountNodeRef.current, null, () => {});

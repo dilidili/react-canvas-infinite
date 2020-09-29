@@ -34,13 +34,13 @@ function createNode(layer: RenderLayer): LayoutNode {
 }
 
 function walkNode(node: LayoutNode, parentLeft?: number, parentTop?: number) {
-  node.layer.frame.x = node.layout.left + (parentLeft || 0)
-  node.layer.frame.y = node.layout.top + (parentTop || 0)
-  node.layer.frame.width = node.layout.width
-  node.layer.frame.height = node.layout.height
+  node.layer.frame.x = node.layout.left + (parentLeft || 0);
+  node.layer.frame.y = node.layout.top + (parentTop || 0);
+  node.layer.frame.width = node.layout.width || 0;
+  node.layer.frame.height = node.layout.height || 0;
   if (node.children && node.children.length > 0) {
     node.children.forEach(child => {
-      walkNode(child, node.layer.frame.x, node.layer.frame.y)
+      walkNode(child, node.layer.frame.x, node.layer.frame.y);
     })
   }
 }
@@ -48,7 +48,7 @@ function walkNode(node: LayoutNode, parentLeft?: number, parentTop?: number) {
 function preWalkNode(node: LayoutNode) {
   const layer = node.layer;
 
-  if (layer.type === 'text') {
+  if (layer.type === 'Text') {
     const fontFace = layer.fontFace || DefaultFontFace();
     const fontSize = layer.fontSize || 16;
     const lineHeight = layer.lineHeight || 18;

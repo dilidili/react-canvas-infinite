@@ -137,6 +137,10 @@ class InstancePool {
 
 const _instancePool = new InstancePool();
 const ImageCache = {
+  has(src: string) {
+    return !!_instancePool.get(src);
+  },
+
   /**
    * Retrieve an image from the cache
    */

@@ -9,13 +9,13 @@ declare global {
   }
 }
 
-const LAYER_TYPE = 'group';
+const LAYER_TYPE = 'Group';
 
 class Group extends CanvasComponent<CanvasComponentProps> {
   constructor() {
     super(LAYER_TYPE);
 
-    this.node = new RenderLayer();
+    this.node = new RenderLayer(this);
   }
 
   node: RenderLayer;

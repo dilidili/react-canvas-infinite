@@ -4,7 +4,7 @@ import { drawText, drawImage } from './CanvasUtils'
 import { FontFaceType } from './FontFace';
 import Canvas from './Canvas';
 import DebugCanvasContext from './DebugCanvasContext';
-import RenderLayer, { ImageRenderLayer, TextRenderLayer } from './RenderLayer';
+import RenderLayer, { ImageRenderLayer, TextRenderLayer, LayerType } from './RenderLayer';
 
 // Global backing store <canvas> cache
 let _backingStores: ({
@@ -51,7 +51,7 @@ function invalidateAllBackingStores() {
  */
 function layerContainsImage(layer: RenderLayer, imageUrl: string) {
   // Check the layer itself.
-  if (layer.type === 'image' && layer.imageUrl === imageUrl) {
+  if (layer.type === 'RawImage' && layer.imageUrl === imageUrl) {
     return layer;
   }
 
@@ -74,7 +74,7 @@ function layerContainsImage(layer: RenderLayer, imageUrl: string) {
 function layerContainsFontFace(layer: RenderLayer, fontFace: FontFaceType) {
   // Check the layer itself.
   if (
-    layer.type === 'text' &&
+    layer.type === 'Text' &&
     layer.fontFace &&
     layer.fontFace.id === fontFace.id
   ) {
@@ -188,7 +188,7 @@ function drawBaseRenderLayer(ctx: CanvasRenderingContext2D | DebugCanvasContext,
       ctx.closePath();
 
       // Create a clipping path when drawing an image or using border radius.
-      if (layer.type === 'image') {
+      if (layer.type === 'RawImage') {
         ctx.clip();
       }
 
@@ -274,15 +274,13 @@ function drawTextRenderLayer(ctx: CanvasRenderingContext2D, layer: TextRenderLay
 
 type DrawFunction = (ctx: CanvasRenderingContext2D | DebugCanvasContext, layer: RenderLayer) => void;
 
-const layerTypesToDrawFunction: {
-  [key: string]: DrawFunction,
-} = {
-  image: drawImageRenderLayer,
-  text: drawTextRenderLayer,
-  group: drawBaseRenderLayer,
+const layerTypesToDrawFunction = {
+  RawImage: drawImageRenderLayer,
+  Text: drawTextRenderLayer,
+  Group: drawBaseRenderLayer,
 }
 
-function getDrawFunction(type: string): DrawFunction {
+function getDrawFunction(type: LayerType): DrawFunction {
   return layerTypesToDrawFunction[type] || drawBaseRenderLayer;
 }
 
@@ -395,7 +393,7 @@ const drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLa
   const frameOffsetX = layer.frame.x;
   let backingContext;
 
-  const shouldRedraw = !backingStore || !!layer.scrollable;
+  const shouldRedraw = !backingStore;
   if (!backingStore) {
     if (_backingStores.length >= Canvas.poolSize) {
       // Re-use the oldest backing store once we reach the pooling limit.

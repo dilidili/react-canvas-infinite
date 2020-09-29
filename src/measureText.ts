@@ -2,7 +2,7 @@ import { LineBreaker } from 'css-line-break';
 import MultiKeyCache from 'multi-key-cache';
 
 import { isFontLoaded } from './FontUtils';
-import { FontCacheValue } from './FontFace';
+import { FontFaceType } from './FontFace';
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
@@ -38,7 +38,7 @@ const _zeroMetrics: MetricType = {
 export default function measureText(
   text: string,
   width: number,
-  fontFace: FontCacheValue,
+  fontFace: FontFaceType,
   fontSize: number,
   lineHeight: number,
 ): MetricType {

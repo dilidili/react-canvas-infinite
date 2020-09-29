@@ -13,15 +13,12 @@ import Group from './Group';
 import { RawImage } from './Image';
 import CanvasComponent from './CanvasComponent';
 import { getClosestInstanceFromNode } from './ReactDOMComponentTree';
+import { LayerType } from './RenderLayer';
 
 const UPDATE_SIGNAL = {};
 const MAX_POOLED_COMPONENTS_PER_TYPE = 1024;
 
-type CanvasComponentClass = typeof CanvasComponent;
-interface DerivedCanvas extends CanvasComponentClass {};
-const componentConstructors: {
-  [key: string]: DerivedCanvas,
-} = {
+const componentConstructors = {
   Group,
   RawImage,
   Text,
@@ -59,7 +56,7 @@ const freeComponentAndChildren = (c: CanvasComponent) => {
   freeComponentToPool(c);
 }
 
-const CanvasHostConfig: HostConfig<string, any, CanvasComponent, CanvasComponent, Text, any, any, Object, typeof UPDATE_SIGNAL, any, number, number> = {
+const CanvasHostConfig: HostConfig<LayerType, any, CanvasComponent, CanvasComponent, Text, any, any, Object, typeof UPDATE_SIGNAL, any, number, number> = {
   getPublicInstance(instance) {
     return instance;
   },
@@ -75,7 +72,6 @@ const CanvasHostConfig: HostConfig<string, any, CanvasComponent, CanvasComponent
 
   createInstance(type, props) {
     let instance: CanvasComponent | undefined;
-
     const pool = componentPool[type];
 
     if (pool && pool.length > 0) {
