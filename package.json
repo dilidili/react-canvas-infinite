@@ -16,7 +16,8 @@
     "lint": "eslint 'src/**/*'",
     "lint:fix": "eslint 'src/**/*' --fix",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "chromatic": "npx chromatic --project-token 1qsillmhn1r"
   },
   "keywords": [
     "react",
@@ -54,6 +55,7 @@
   "peerDependencies": {},
   "dependencies": {
     "@types/react-motion": "0.0.29",
+    "chromatic": "^5.2.0",
     "css-layout": "^1.1.1",
     "css-line-break": "^1.1.1",
     "eslint-plugin-jsx-a11y": "^6.3.1",
