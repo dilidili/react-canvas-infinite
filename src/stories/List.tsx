@@ -35,7 +35,7 @@ const Demo = () => {
               setTimeout(() => {
                 setDataList(datas => datas.concat(datas.slice(0, 8)));
                 resolve();
-              }, 500);
+              }, 1500);
             });
           }}
         >

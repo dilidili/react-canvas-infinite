@@ -1,9 +1,9 @@
 import React, { useRef, useReducer } from 'react';
 import layoutNode from './layoutNode'
-import { Group } from './Core';
+import { Group, Text } from './Core';
 import CanvasComponent, { CanvasStylePropperties } from './CanvasComponent';
 import { Scroller } from 'scroller';
-
+import { Motion, spring } from 'react-motion';
 
 type ChildrenScrollTop = {
   scrollTop: number,
@@ -77,6 +77,8 @@ const List: React.FC<{
     scrollTop: 0,
   });
 
+  const itemCount = numberOfItemsGetter();
+
   if (scrollerRef.current == null) {
     // create scroller
     scrollerRef.current = new Scroller((_left: number, top: number) => {
@@ -94,9 +96,9 @@ const List: React.FC<{
   }
 
   const computeItemHeight = (component: CanvasComponent) => {
-    layoutNode(component.node);
+    const node = layoutNode(component.node, true);
 
-    let height = component.node.frame.height;
+    let height = node.layout.height || 0;
     if (component.node._originalStyle) {
       if (typeof component.node._originalStyle.marginTop === 'number') {
         height += (+component.node._originalStyle.marginTop);
@@ -106,11 +108,21 @@ const List: React.FC<{
         height += (+component.node._originalStyle.marginBottom);
       }
     }
+
     return height;
   }
 
+  const renderLoading = () => {
+    return (
+      <Group style={{ width: '100%', }}>
+        <Text>Loading...</Text>
+      </Group>
+    );
+  }
+
   const renderItem = (itemIndex: number, translateY: number) => {
-    const item = itemGetter(itemIndex);
+    const isLoadingSpinner = itemIndex >= itemCount;
+    const item = isLoadingSpinner ? renderLoading() : itemGetter(itemIndex);
 
     return (
       React.cloneElement(item, {
@@ -121,18 +133,24 @@ const List: React.FC<{
             // the size change of invisible items are leave out of confideration here and will be corrected again when scroll to make them appear.
             const scrollTopList = childrenScrollTopRef.current;
             const computedHeight = computeItemHeight(ref);
-
-            const needUpdateDimensions = scrollTopList[itemIndex] == null && itemIndex === numberOfItemsGetter() - 1;
+      
             const prevItemScroll = scrollTopList[itemIndex - 1] || {
               scrollTop: 0,
               height: 0,
             };
-
+            const newScrollTop = prevItemScroll.scrollTop + prevItemScroll.height;
+      
+            let needUpdateDimensions = false;
+            // last item will effect scrollHeight.
+            if (itemIndex === (scrollReducer[0].isLoading ? numberOfItemsGetter() : numberOfItemsGetter() - 1)) {
+              needUpdateDimensions = scrollTopList[itemIndex] == null ? true : scrollTopList[itemIndex].height !== computedHeight || scrollTopList[itemIndex].scrollTop !== newScrollTop;
+            }
+      
             scrollTopList[itemIndex] = {
-              scrollTop: prevItemScroll.scrollTop + prevItemScroll.height,
+              scrollTop: newScrollTop,
               height: computedHeight,
             };
-
+      
             if (needUpdateDimensions) {
               scrollerRef.current && scrollerRef.current.setDimensions(
                 style.width,
@@ -177,7 +195,14 @@ const List: React.FC<{
     }
 
     const translateY = itemIndexes[0] !== undefined && childrenScrollTopRef.current.length > 0 ? childrenScrollTopRef.current[itemIndexes[0]].scrollTop - scrollReducer[0].scrollTop : 0;
-    return itemIndexes.map((i) => renderItem(i, translateY));
+    const visibleItems = itemIndexes.map((i) => renderItem(i, translateY));
+
+    // loading spinner
+    if (scrollReducer[0].isLoading) {
+      visibleItems.push(renderItem(itemCount, translateY));
+    }
+
+    return visibleItems;
   }
 
   const handleTouchStart: React.TouchEventHandler = (e) => {

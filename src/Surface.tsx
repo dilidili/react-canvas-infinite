@@ -48,7 +48,7 @@ const Surface: React.FC<SurfaceProps> = ({
   const [canvasHeight, setCanvasHeight] = useState<number>(height);
 
   const canvasRef = useRef<SurfaceElement>(null);
-  const nodeRef = useRef<RenderLayer>();
+  const nodeRef = useRef<RenderLayer | null>(null);
   if (nodeRef.current == null) {
     nodeRef.current = new RenderLayer(new Group())
   }
@@ -59,11 +59,9 @@ const Surface: React.FC<SurfaceProps> = ({
   const renderSchedulerRef = useRef<{
     _frameReady: boolean;
     _pendingTick: boolean;
-    _nextTickRecomputeLayout: boolean;
   }>({
     _frameReady: true,
     _pendingTick: false,
-    _nextTickRecomputeLayout: true,
   });
 
   const eventSaveRef = useRef<{
@@ -112,7 +110,7 @@ const Surface: React.FC<SurfaceProps> = ({
     CanvasRenderer.updateContainer(children, mountNodeRef.current, null, () => {});
 
     // Execute initial draw on mount.
-    batchedTick(true);
+    batchedTick();
 
     return () => {
       mountNodeRef.current && CanvasRenderer.updateContainer(null, mountNodeRef.current, null, () => {});
@@ -134,14 +132,12 @@ const Surface: React.FC<SurfaceProps> = ({
   });
 
   // render scheduler.
-  const draw = useCallback((recomputeLayout = true) => {
+  const draw = useCallback(() => {
     if (nodeRef.current) {
       const node = nodeRef.current;
       const ctx = getContext();
 
-      if (recomputeLayout) {
-        layoutNode(node);
-      }
+      layoutNode(node);
 
       ctx && drawRenderLayer(ctx, node);
 
@@ -160,12 +156,11 @@ const Surface: React.FC<SurfaceProps> = ({
     // Canvas might be already removed from DOM.
     if (renderScheduler._pendingTick && canvasRef.current) {
       renderScheduler._pendingTick = false;
-      batchedTick(renderScheduler._nextTickRecomputeLayout);
-      renderScheduler._nextTickRecomputeLayout = true;
+      batchedTick();
     }
   }, [])
 
-  const tick = useCallback((recomputeLayout: boolean) => {
+  const tick = useCallback(() => {
     const renderScheduler = renderSchedulerRef.current;
 
     // Block updates until next animation frame.
@@ -174,20 +169,19 @@ const Surface: React.FC<SurfaceProps> = ({
     const ctx = getContext();
     ctx && ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-    draw(recomputeLayout);
+    draw();
     requestAnimationFrame(afterTick);
   }, [draw, afterTick]);
 
-  const batchedTick = useCallback((recomputeLayout = false) => {
+  const batchedTick = useCallback(() => {
     const renderScheduler = renderSchedulerRef.current;
 
     if (renderScheduler._frameReady === false) {
       renderScheduler._pendingTick = true;
-      renderScheduler._nextTickRecomputeLayout = recomputeLayout;
       return;
     }
 
-    tick(recomputeLayout);
+    tick();
   }, [tick]);
 
 
