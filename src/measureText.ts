@@ -82,6 +82,7 @@ export default function measureText(
       wordBreak: 'normal',
     });
 
+    // eslint-disable-next-line no-cond-assign
     while (!(bk = breaker.next()).done) {
       if (!bk.value) break;
 

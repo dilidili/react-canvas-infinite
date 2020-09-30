@@ -5,7 +5,8 @@ import {
   unstable_now as now,
   unstable_scheduleCallback as scheduleDeferredCallback,
   unstable_cancelCallback as cancelDeferredCallback,
-  unstable_ImmediatePriority,
+  // eslint-disable-next-line unicorn/no-abusive-eslint-disable
+  unstable_ImmediatePriority as immediatePriority,
 } from 'scheduler';
 import { emptyObject } from './utils';
 import Text from './Text';
@@ -121,12 +122,12 @@ const CanvasHostConfig: HostConfig<LayerType, any, CanvasComponent, CanvasCompon
   },
 
   scheduleDeferredCallback(...args) {
-    scheduleDeferredCallback(unstable_ImmediatePriority, ...args);
+    scheduleDeferredCallback(immediatePriority, ...args);
   },
   cancelDeferredCallback,
 
-  setTimeout: setTimeout,
-  clearTimeout: clearTimeout,
+  setTimeout,
+  clearTimeout,
   noTimeout: 0,
 
   now,
@@ -204,7 +205,7 @@ const CanvasHostConfig: HostConfig<LayerType, any, CanvasComponent, CanvasCompon
       instance.applyLayerProps(oldProps, newProps);
       instance.getLayer().invalidateLayout();
     }
-  }
+  },
 }
 
 const CanvasRenderer = ReactFiberReconciler<string, any, any, CanvasComponent, Text, any, any, Object, typeof UPDATE_SIGNAL, any, number, number>(CanvasHostConfig);
@@ -217,7 +218,7 @@ CanvasRenderer.injectIntoDevTools({
   getInspectorDataForViewTag: (...args) => {
     console.log(args) // eslint-disable-line no-console
     return {};
-  }
+  },
 })
 
-export { CanvasRenderer, };
+export default CanvasRenderer;

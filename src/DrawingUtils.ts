@@ -162,28 +162,28 @@ function drawBaseRenderLayer(ctx: CanvasRenderingContext2D | DebugCanvasContext,
         frame.y,
         frame.x + frame.width,
         frame.y + frame.height,
-        layer.borderRadius
+        layer.borderRadius,
       );
       ctx.arcTo(
         frame.x + frame.width,
         frame.y + frame.height,
         frame.x,
         frame.y + frame.height,
-        layer.borderRadius
+        layer.borderRadius,
       );
       ctx.arcTo(
         frame.x,
         frame.y + frame.height,
         frame.x,
         frame.y,
-        layer.borderRadius
+        layer.borderRadius,
       );
       ctx.arcTo(
         frame.x,
         frame.y,
         frame.x + frame.width,
         frame.y,
-        layer.borderRadius
+        layer.borderRadius,
       );
       ctx.closePath();
 
@@ -208,10 +208,18 @@ function drawBaseRenderLayer(ctx: CanvasRenderingContext2D | DebugCanvasContext,
     }
 
     // Shadow.
-    layer.shadowBlur && (ctx.shadowBlur = layer.shadowBlur);
-    layer.shadowColor && (ctx.shadowColor = layer.shadowColor);
-    layer.shadowOffsetX && (ctx.shadowOffsetX = layer.shadowOffsetX);
-    layer.shadowOffsetY && (ctx.shadowOffsetY = layer.shadowOffsetY);
+    if (layer.shadowBlur) {
+      (ctx.shadowBlur = layer.shadowBlur);
+    }
+    if (layer.shadowColor) {
+      ctx.shadowColor = layer.shadowColor
+    };
+    if (layer.shadowOffsetX) {
+      ctx.shadowOffsetX = layer.shadowOffsetX
+    };
+    if (layer.shadowOffsetY) {
+      ctx.shadowOffsetY = layer.shadowOffsetY;
+    }
 
     // Background color.
     if (layer.backgroundColor) {
@@ -309,8 +317,7 @@ function drawChildren(layer: RenderLayer, ctx: CanvasRenderingContext2D | DebugC
       drawRenderLayer(ctx, c1)
       drawRenderLayer(ctx, c0)
     }
-  } else {
-    if (start !== undefined && end !== undefined) {
+  } else if (start !== undefined && end !== undefined) {
       const sliceChildren = children.slice(start, end + 1);
       sliceChildren
         .slice()
@@ -321,13 +328,12 @@ function drawChildren(layer: RenderLayer, ctx: CanvasRenderingContext2D | DebugC
         .sort(sortByZIndexAscending)
         .forEach(childLayer => drawRenderLayer(ctx, childLayer))
     }
-  }
 }
 
 /**
  * Draw a RenderLayer instance to a <canvas> context.
  */
-const drawRenderLayer = (ctx: CanvasRenderingContext2D | DebugCanvasContext, layer: RenderLayer) => {
+function drawRenderLayer(ctx: CanvasRenderingContext2D | DebugCanvasContext, layer: RenderLayer) {
   const drawFunction = getDrawFunction(layer.type);
   const isDebug = ctx instanceof DebugCanvasContext;
 
@@ -383,7 +389,7 @@ const drawRenderLayer = (ctx: CanvasRenderingContext2D | DebugCanvasContext, lay
  * drawn into the given context. This will populate the layer backing store
  * cache with the result.
  */
-const drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLayer, drawFunction: DrawFunction) => {
+function drawCacheableRenderLayer(ctx: CanvasRenderingContext2D, layer: RenderLayer, drawFunction: DrawFunction) {
   if (!layer.backingStoreId) return;
 
   // See if there is a pre-drawn canvas in the pool.
@@ -405,7 +411,9 @@ const drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLa
       _backingStores[0].canvas = backingStore;
 
       const shift = _backingStores.shift();
-      shift && _backingStores.push(shift);
+      if (shift) {
+        _backingStores.push(shift);
+      }
     } else {
       // Create a new backing store, we haven't yet reached the pooling limit
       backingStore = new Canvas(
@@ -417,7 +425,7 @@ const drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLa
       _backingStores.push({
         id: layer.backingStoreId,
         layer,
-        canvas: backingStore
+        canvas: backingStore,
       })
     }
   }
@@ -430,7 +438,7 @@ const drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLa
     if (backingContext) {
       backingContext.clearRect(0, 0, layer.frame.width, layer.frame.height);
 
-      let startIndex: number | undefined, endIndex: number | undefined;
+      let startIndex: number | undefined; let endIndex: number | undefined;
 
       layer.translate(-frameOffsetX, -frameOffsetY, startIndex, endIndex);
 
@@ -439,7 +447,9 @@ const drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLa
 
       // Custom drawing operations
       // eslint-disable-next-line no-unused-expressions
-      drawFunction && drawFunction(backingContext, layer);
+      if (drawFunction) {
+        drawFunction(backingContext, layer);
+      }
       backingContext.restore();
 
       // Draw child layers, sorted by their z-index.
@@ -475,7 +485,7 @@ const drawCacheableRenderLayer = (ctx: CanvasRenderingContext2D, layer: RenderLa
       layer.frame.x,
       layer.frame.y,
       layer.frame.width,
-      layer.frame.height
+      layer.frame.height,
     )
   }
 }

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import datas from './data';
+import initialData from './data';
 import { Group, Image, Text, Surface, FontFace, List } from '../index';
 
 const Demo = () => {
   const props = { size: { width: 400, height: 400 } };
-  const [dataList, setDataList] = useState(datas);
+  const [dataList, setDataList] = useState(initialData);
 
   return (
     <div>
@@ -21,7 +21,7 @@ const Demo = () => {
 
             return (
               <Group style={{ flexDirection: 'row', marginBottom: 20 }}>
-                <Image src={data.imageUrl} style={{ marginRight: 10, width: 40, height: 40, borderRadius: 20 }}></Image>
+                <Image src={data.imageUrl} style={{ marginRight: 10, width: 40, height: 40, borderRadius: 20 }} />
 
                 <Group style={{ height: 40, justifyContent: 'space-between' }}>
                   <Text>{`${index} ${data.title}`}</Text>
@@ -38,8 +38,7 @@ const Demo = () => {
               }, 1500);
             });
           }}
-        >
-        </List>
+         />
       </Surface>
     </div>
   )

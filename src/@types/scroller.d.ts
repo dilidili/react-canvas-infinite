@@ -24,29 +24,45 @@ declare module 'scroller' {
   
   export class Scroller {
     constructor(callback: (left: number, top: number, zoom: number) => void, options?: Scroller.Options);
+
     setDimensions(clientWidth: number, clientHeight: number, contentWidth: number, contentHeight: number): void;
+
     setPosition(clientLeft: number, clientTop: number): void;
+
     setSnapSize(width: number, height: number): void;
+
     activatePullToRefresh(height: number, activate: () => void, deactivate: () => void, start: () => void): void;
+
     finishPullToRefresh(): void;
+
     getValues(): {
       left: number;
       top: number;
       zoom: number
     };
+
     getScrollMax(): { left: number; top: number; };
+
     zoomTo(level: number, animate?: boolean, originLeft?: number,
       originTop?: number, callback?: () => void): void;
+
     zoomBy(factor: number, animate?: boolean, originLeft?: number,
       originTop?: number, callback?: () => void): void;
+
     scrollTo(left: number, top: number, animate?: boolean, zoom?: number): void;
+
     scrollBy(leftOffset: number, topOffset: number, animate?: boolean): void;
   
     doMouseZoom(wheelData: number, timeStamp: number, pageX: number, pageY: number): void;
+
     doTouchStart(touches: React.TouchList, timeStamp: number): void;
+
     doTouchMove(touches: React.TouchList, timeStamp: number, scale?: number): void;
+
     doTouchEnd(timeStamp: number): void;
+
     __contentHeight: number;
+
     __clientHeight: number;
   }
   
@@ -54,7 +70,9 @@ declare module 'scroller' {
     constructor(content: any, options: Scroller.Options);
   
     render(): void;
+
     reflow(): void;
+
     bindEvents(): void;
   }
 }

@@ -36,3 +36,5 @@ export function getClosestInstanceFromNode(node: any) {
 
   return null;
 }
+
+export default {};

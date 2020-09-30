@@ -1,6 +1,6 @@
-import { zero } from './FrameUtils';
+import { zero , Frame } from './FrameUtils';
 import { invalidateBackingStore } from './DrawingUtils';
-import { Frame } from './FrameUtils';
+
 import { DefaultFontFace, FontFaceType } from './FontFace';
 import EventTypes from './EventTypes';
 import CanvasComponent, { CanvasStylePropperties } from './CanvasComponent';
@@ -15,25 +15,39 @@ class RenderLayer {
   }
 
   type: LayerType;
+
   frame: Frame;
+
   component: CanvasComponent;
+
   backingStoreId?: number;
 
   // traverse layer tree
   parentLayer?: RenderLayer;
+
   children: RenderLayer[] = [];
 
   // styles
   borderRadius?: number;
+
   borderColor?: string;
+
   backgroundColor?: string;
+
   borderWidth?: number;
+
   shadowBlur?: number;
+
   shadowColor?: string;
+
   shadowOffsetX?: number;
+
   shadowOffsetY?: number;
+
   zIndex?: number;
+
   translateX?: number;
+
   translateY?: number;
 
   _originalStyle?: CanvasStylePropperties;
@@ -51,14 +65,15 @@ class RenderLayer {
       invalidateBackingStore(this.backingStoreId);
     }
 
-    for (const key in (this as RenderLayer)) {
-      if (key === 'children' || key === 'frame') continue;
+    Object.keys(this).forEach(key => {
+      if (key === 'children' || key === 'frame') return;
+
       const value = this[key];
 
-      if (typeof value === 'function') continue;
+      if (typeof value === 'function') return;
 
       this[key] = undefined;
-    }
+    });
 
     if (this.children) {
       this.children.length = 0;
@@ -144,7 +159,7 @@ class RenderLayer {
     ) {
       this.parentLayer.children.splice(
         this.parentLayer.children.indexOf(this),
-        1
+        1,
       );
 
       this.parentLayer.children.unshift(this);
@@ -165,11 +180,11 @@ class RenderLayer {
   }
 
   destroyEventListeners() {
-    for (const eventType in EventTypes) {
+    Object.keys(EventTypes).forEach(eventType => {
       if (this[eventType]) {
         delete this[eventType];
       }
-    }
+    });
   }
 
   removeEventListener(type: keyof typeof EventTypes, callback: Function, callbackScope: CanvasComponent) {
@@ -245,7 +260,8 @@ class RenderLayer {
   /**
    * Only the root owning layer should implement this function.
    */
-  draw(_ = true) {
+  // eslint-disable-next-line class-methods-use-this
+  draw() {
     // Placeholer
   }
 }
@@ -266,7 +282,9 @@ export class TextRenderLayer extends RenderLayer {
   }
 
   text: string = '';
+
   fontFace: FontFaceType = DefaultFontFace();
+
   containerInfo?: HTMLDivElement;
 }
 

@@ -54,9 +54,9 @@ const Image: React.FC<ImageProps> = (props) => {
   const [loaded, setLoaded] = useState(ImageCache.has(props.src));
   const [imageAlpha, setImageAlpha] = useState(0);
 
-  const imageStyle = Object.assign({}, props.style);
-  const style = Object.assign({}, props.style);
-  const backgroundStyle = Object.assign({}, props.style);
+  const imageStyle = { ...props.style};
+  const style = { ...props.style};
+  const backgroundStyle = { ...props.style};
 
   useEffect(() => {
     if (ImageCache.has(props.src)) {
@@ -73,12 +73,12 @@ const Image: React.FC<ImageProps> = (props) => {
       if (image.isLoaded()) {
         handleImageLoad();
         return undefined;
-      } else {
+      } 
         image.on('load', handleImageLoad);
         return () => {
           ImageCache.get(props.src).off('load', handleImageLoad);
         }
-      }
+      
     }
   }, [props.src]);
 

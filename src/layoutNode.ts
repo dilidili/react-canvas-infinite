@@ -25,11 +25,11 @@ function createNode(layer: RenderLayer): LayoutNode {
       width: undefined, // computeLayout will mutate
       height: undefined, // computeLayout will mutate
       top: 0,
-      left: 0
+      left: 0,
     },
     style: layer._originalStyle || emptyObject,
     // TODO no need to layout children that have non-dirty backing store
-    children: (layer.children || []).map(createNode)
+    children: (layer.children || []).map(createNode),
   }
 }
 
@@ -47,7 +47,7 @@ function walkNode(node: LayoutNode, parentLeft?: number, parentTop?: number) {
 }
 
 function preWalkNode(node: LayoutNode) {
-  const layer = node.layer;
+  const {layer} = node;
 
   if (layer.type === 'Text') {
     const fontFace = layer.fontFace || DefaultFontFace();
@@ -60,7 +60,7 @@ function preWalkNode(node: LayoutNode) {
       } ${fontSize}px ${fontFace.family}`;
 
       const { width } = ctx.measureText(layer.text);
-      node.style = { ...node.style, width: width, height: lineHeight, };
+      node.style = { ...node.style, width, height: lineHeight };
     }
   }
 

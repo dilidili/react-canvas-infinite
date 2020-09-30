@@ -124,13 +124,11 @@ function loadFontNormal(fontFace: FontFaceType, callback: LoadCallback) {
 
     if (loaded) {
       handleFontLoad(fontFace);
-    } else {
-      if (Date.now() - _pendingFonts[fontFace.id].startTime >= kFontLoadTimeout) {
+    } else if (Date.now() - _pendingFonts[fontFace.id].startTime >= kFontLoadTimeout) {
         handleFontLoad(fontFace, true);
       } else {
         requestAnimationFrame(checkFont);
       }
-    }
   }
 
   // Start watching
@@ -186,7 +184,7 @@ function loadFontNative(fontFace: FontFaceType, callback: LoadCallback) {
     },
     () => {
       handleFontLoad(fontFace, true);
-    }
+    },
   );
 }
 

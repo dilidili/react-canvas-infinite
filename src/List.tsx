@@ -1,9 +1,8 @@
 import React, { useRef, useReducer } from 'react';
+import { Scroller } from 'scroller';
 import layoutNode from './layoutNode'
 import { Group, Text } from './Core';
 import CanvasComponent, { CanvasStylePropperties } from './CanvasComponent';
-import { Scroller } from 'scroller';
-import { Motion, spring } from 'react-motion';
 
 type ChildrenScrollTop = {
   scrollTop: number,
@@ -64,14 +63,14 @@ const List: React.FC<{
       }
 
       return ret;
-    } else if (action.type === 'updateIsLoading') {
+    } if (action.type === 'updateIsLoading') {
       return {
         ...state,
         isLoading: action.isLoading,
       };
-    } else {
+    } 
       return state;
-    }
+    
   }, {
     isLoading: false,
     scrollTop: 0,
@@ -114,7 +113,7 @@ const List: React.FC<{
 
   const renderLoading = () => {
     return (
-      <Group style={{ width: '100%', }}>
+      <Group style={{ width: '100%' }}>
         <Text>Loading...</Text>
       </Group>
     );
@@ -145,14 +144,14 @@ const List: React.FC<{
             if (itemIndex === (scrollReducer[0].isLoading ? numberOfItemsGetter() : numberOfItemsGetter() - 1)) {
               needUpdateDimensions = scrollTopList[itemIndex] == null ? true : scrollTopList[itemIndex].height !== computedHeight || scrollTopList[itemIndex].scrollTop !== newScrollTop;
             }
-      
+
             scrollTopList[itemIndex] = {
               scrollTop: newScrollTop,
               height: computedHeight,
             };
       
-            if (needUpdateDimensions) {
-              scrollerRef.current && scrollerRef.current.setDimensions(
+            if (needUpdateDimensions && scrollerRef.current) {
+               scrollerRef.current.setDimensions(
                 style.width,
                 style.height,
                 scrollWidth,
@@ -171,13 +170,12 @@ const List: React.FC<{
 
   const getVisibleItems = () => {
     const itemIndexes = [];
-    const itemCount = numberOfItemsGetter();
 
     for (let i = 0; i < itemCount; i++) {
       if (!childrenScrollTopRef.current[i]) {
         itemIndexes.push(i);
       } else {
-        let itemScrollTop = childrenScrollTopRef.current[i].scrollTop - scrollReducer[0].scrollTop;
+        const itemScrollTop = childrenScrollTopRef.current[i].scrollTop - scrollReducer[0].scrollTop;
 
         // Items completely reach over off-screen bottom.
         if (itemScrollTop >= style.height) {

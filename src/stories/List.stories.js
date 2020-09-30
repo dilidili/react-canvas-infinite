@@ -9,10 +9,7 @@ export default {
 
 const Template = (args) => <List {...args} />;
 
-export const LoggedIn = Template.bind({});
-LoggedIn.args = {
+export const Normal = Template.bind({});
+Normal.args = {
   user: {},
 };
-
-export const LoggedOut = Template.bind({});
-LoggedOut.args = {};

@@ -28,7 +28,7 @@ export const DefaultFontFace = (fontWeight?: number) => {
   return FontFace('sans-serif', { weight: fontWeight });
 }
 
-const FontFace = (family: string, attributes?: FontAttribute, url?: string) => {
+function FontFace(family: string, attributes?: FontAttribute, url?: string) {
   let fontFace: FontFaceType;
 
   const fontStyle = (attributes ? attributes.style : '') || 'normal';

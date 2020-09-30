@@ -40,7 +40,7 @@ function drawImage(ctx: CanvasRenderingContext2D | DebugCanvasContext, image: Im
   scale = parseFloat(scale.toFixed(4));
   const scaledSize = {
     width: actualSize.width * scale,
-    height: actualSize.height * scale
+    height: actualSize.height * scale,
   };
 
   if (options && focusPoint) {
@@ -128,7 +128,6 @@ function drawText(
     backgroundColor: _options.backgroundColor || 'transparent',
     color: _options.color || '#000',
   };
-
 
   if (ctx instanceof DebugCanvasContext && layer.containerInfo) {
     layer.containerInfo.innerText = layer.text || '';

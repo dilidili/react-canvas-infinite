@@ -67,7 +67,7 @@ function intersection(frame: Frame, otherFrame: Frame) {
   const y = Math.max(frame.y, otherFrame.y);
   const height = Math.min(
     frame.y + frame.height,
-    otherFrame.y + otherFrame.height
+    otherFrame.y + otherFrame.height,
   );
   if (width >= x && height >= y) {
     return make(x, y, width - x, height - y);

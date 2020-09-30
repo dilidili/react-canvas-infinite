@@ -44,8 +44,11 @@ export default abstract class CanvasComponent<P extends CanvasComponentProps = C
   abstract node: RenderLayer;
 
   _comopnentId: number;
+
   type: string;
+
   subscriptions: Map<string, Function | undefined>;
+
   listeners: Map<string, Function | undefined>;
 
   abstract applyLayerProps: (prevProps: P, props: P) => void;
@@ -159,12 +162,11 @@ export default abstract class CanvasComponent<P extends CanvasComponentProps = C
     }
 
     // Register events.
-    let type: keyof typeof EventTypes;
-    for (type in EventTypes) {
+    (Object.keys(EventTypes) as Array<keyof typeof EventTypes>).forEach((type) => {
       if (prevProps[type] !== props[type]) {
         this.putEventListener(type, props[type]);
       }
-    }
+    });
 
     this.setStyleFromProps(layer, props);
   }

@@ -25,7 +25,9 @@ class Canvas {
   }
 
   width = 0;
+
   height = 0;
+
   scale = 0;
 
   reset(width: number, height: number, scale: number) {

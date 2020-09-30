@@ -22,10 +22,15 @@ class DebugCanvasContext {
   stack: SaveItem[] = [];
 
   canvasRef?: React.RefObject<HTMLDivElement> = undefined;
+
   scaleX = 1;
+
   scaleY = 1;
+
   globalAlpha = 1;
+
   translateX = 0;
+
   translateY = 0;
 
   scale = (scaleX: number, scaleY: number) => {
@@ -40,7 +45,9 @@ class DebugCanvasContext {
 
   clearRect = () => {
     // debug mode only supports clear all children nodes.
-    this.canvasRef && this.canvasRef.current && (this.canvasRef.current.innerHTML = '');
+    if (this.canvasRef && this.canvasRef.current) {
+      this.canvasRef.current.innerHTML = '';
+    }
   }
 
   save = () => {

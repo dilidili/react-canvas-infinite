@@ -9,13 +9,11 @@ function sortByZIndexDescending(layer: RenderLayer, otherLayer: RenderLayer) {
 function getHitHandle(type: string) {
   let hitHandle;
 
-  let tryHandle: keyof typeof EventTypes;
-  for (tryHandle in EventTypes) {
+  Object.keys(EventTypes).forEach((tryHandle: keyof typeof EventTypes) => {
     if (EventTypes[tryHandle] === type) {
       hitHandle = tryHandle;
-      break;
     }
-  }
+  });
 
   return hitHandle;
 }
@@ -25,7 +23,7 @@ function getLayerAtPoint(root: RenderLayer, type: string, point: Frame, tx: numb
   let layer = null;
   const hitHandle = getHitHandle(type);
   let sortedChildren;
-  let hitFrame = clone(root.frame);
+  const hitFrame = clone(root.frame);
 
   // Early bail for non-visible layers
   if (typeof root.alpha === 'number' && root.alpha < 0.01) {
@@ -45,7 +43,7 @@ function getLayerAtPoint(root: RenderLayer, type: string, point: Frame, tx: numb
         type,
         point,
         tx + (root.translateX || 0),
-        ty + (root.translateY || 0)
+        ty + (root.translateY || 0),
       );
 
       if (layer) {
@@ -97,7 +95,7 @@ function hitTest(e: React.MouseEvent | React.TouchEvent | React.WheelEvent,
     e.type,
     make(touchX, touchY, 1, 1),
     rootLayer.translateX || 0,
-    rootLayer.translateY || 0
+    rootLayer.translateY || 0,
   );
 }
 

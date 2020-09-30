@@ -104,9 +104,9 @@ class InstancePool {
       delete this.elements[path];
       this.length--;
       return element;
-    } else {
+    } 
       return null;
-    }
+    
   }
 
   _reduceLeastUsed(least: PoolItem, currentHash: string) {
@@ -129,9 +129,9 @@ class InstancePool {
 
     if (minUsed.hash) {
       return this.removeElement(minUsed.hash);
-    } else {
+    } 
       return null;
-    }
+    
   }
 }
 
@@ -153,15 +153,15 @@ const ImageCache = {
 
       if (_instancePool.length >= kInstancePoolLength) {
         const pop = _instancePool.popLeastUsed();
-        if (pop) {
-          pop.data && pop.data.destructor();
+        if (pop && pop.data) {
+          pop.data.destructor();
         }
       }
       _instancePool.push(image.getOriginalSrc(), image);
     }
 
     return image;
-  }
+  },
 }
 
 export default ImageCache;
